@@ -76,3 +76,39 @@ class TestViewServer(object):
 
         self.vs.run()
         self.mocker.VerifyAll()
+
+    def test_handle_dispatch(self):
+        test = [("ddoc", 3), ("reset", 0), ("reset", 1), ("add_fun", 1),
+                ("add_lib", 1), ("map_doc", 1), ("reduce", 2),
+                ("rereduce", 2)]
+
+        for cmd_name in set(i[0] for i in test):
+            self.mocker.StubOutWithMock(self.vs, cmd_name)
+        for (cmd_name, num_args) in test:
+            args = [False for i in xrange(num_args)]
+            getattr(self.vs, cmd_name)(*args)
+        self.mocker.ReplayAll()
+
+        for (cmd_name, num_args) in test:
+            args = [False for i in xrange(num_args)]
+            self.vs.handle_input(cmd_name, *args)
+        self.mocker.VerifyAll()
+
+    def test_ddoc_helper(self):
+        self.mocker.StubOutWithMock(self.vs, "add_ddoc")
+        self.mocker.StubOutWithMock(self.vs, "use_ddoc")
+
+        self.vs.add_ddoc("new_doc_id", {"whatever": True})
+        self.vs.use_ddoc("new_doc_id", "some.function.path", ["some", "arg"])
+        self.mocker.ReplayAll()
+
+        self.vs.ddoc("new", "new_doc_id", {"whatever": True})
+        self.vs.ddoc("new_doc_id", "some.function.path", ["some", "arg"])
+        self.mocker.VerifyAll()
+
+    def test_add_lib_helper(self):
+        self.mocker.StubOutWithMock(self.vs, "set_lib")
+        self.vs.set_lib({"testing": True})
+        self.mocker.ReplayAll()
+        self.vs.add_lib({"testing": True})
+        self.mocker.VerifyAll()
