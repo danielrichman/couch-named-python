@@ -4,7 +4,7 @@ import sys
 import json
 import traceback
 
-class ViewServer:
+class ViewServer(object):
     def __init__(self, stdin, stdout):
         self.stdin = stdin
         self.stdout = stdout

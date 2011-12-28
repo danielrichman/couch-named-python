@@ -21,7 +21,7 @@ class JSON_NL(mox.Comparator):
     def __repr__(self):
         return "JSON_NL({0._obj!r})".format(self)
 
-class TestViewServer:
+class TestViewServer(object):
     def setup(self):
         self.mocker = mox.Mox()
         self.stdin = self.mocker.CreateMock(file)
