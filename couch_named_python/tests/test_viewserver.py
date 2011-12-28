@@ -1,8 +1,8 @@
-# TODO header
+# Copyright 2011 (C) Daniel Richman; GNU GPL 
 
 import mox
 import json
-from .. import ViewServer
+from ..viewserver import ViewServer
 
 class JSON_NL(mox.Comparator):
     def __init__(self, obj):
@@ -40,9 +40,13 @@ class TestViewServer:
         self.stdin.readline().AndReturn("""["map_doc", {"testing": true}]\n""")
         self.vs.handle_input("map_doc", {"testing": True})
         self.stdin.readline().AndReturn("")
+        self.stdout.write(JSON_NL(True))
+        self.stdout.write(JSON_NL([True, 1, 2, "blah", 4]))
         self.mocker.ReplayAll()
 
         self.vs.run()
+        self.vs.okay()
+        self.vs.output(True, 1, 2, "blah", 4)
         self.mocker.VerifyAll()
 
     def test_log(self):
@@ -53,11 +57,21 @@ class TestViewServer:
         self.vs.log("A kuku!")
         self.vs.log("Meh")
 
-    def test_exception(self):
+    def test_misc_exception(self):
         self.stdin.readline().AndReturn("invalid json, woo!")
-        self.stdout.write(JSON_NL({"error": "unhandled exception",
-                                   "reason": "ValueError: No JSON object "
-                                             "could be decoded"}))
+        self.stdout.write(JSON_NL(["error", "unhandled exception",
+                "ValueError: No JSON object could be decoded"]))
+        self.mocker.ReplayAll()
+
+        self.vs.run()
+        self.mocker.VerifyAll()
+
+    def test_command_exception(self):
+        self.mocker.StubOutWithMock(self.vs, "handle_input")
+        self.stdin.readline().AndReturn("""["hello"]\n""")
+        self.vs.handle_input("hello").AndRaise(ValueError("testing"))
+        self.stdout.write(JSON_NL(["error", "unhandled exception",
+                "ValueError: testing"]))
         self.mocker.ReplayAll()
 
         self.vs.run()
