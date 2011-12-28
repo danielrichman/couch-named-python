@@ -2,7 +2,7 @@
 
 import mox
 import json
-from . import ViewServer
+from .. import ViewServer
 
 class JSON_NL(mox.Comparator):
     def __init__(self, obj):
