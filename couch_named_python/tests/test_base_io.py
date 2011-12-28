@@ -2,7 +2,7 @@
 
 import mox
 import json
-from ..viewserver import ViewServer
+from ..base_io import BaseViewServer
 
 class JSON_NL(mox.Comparator):
     def __init__(self, obj):
@@ -21,13 +21,13 @@ class JSON_NL(mox.Comparator):
     def __repr__(self):
         return "JSON_NL({0._obj!r})".format(self)
 
-class TestViewServer(object):
+class TestBaseViewServer(object):
     def setup(self):
         self.mocker = mox.Mox()
         self.stdin = self.mocker.CreateMock(file)
         self.stdout = self.mocker.CreateMock(file)
 
-        self.vs = ViewServer(stdin=self.stdin, stdout=self.stdout)
+        self.vs = BaseViewServer(stdin=self.stdin, stdout=self.stdout)
 
     def teardown(self):
         self.mocker.UnsetStubs()

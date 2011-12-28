@@ -4,7 +4,7 @@ import sys
 import json
 import traceback
 
-class ViewServer(object):
+class BaseViewServer(object):
     def __init__(self, stdin, stdout):
         self.stdin = stdin
         self.stdout = stdout
@@ -78,7 +78,3 @@ class ViewServer(object):
             except:
                 self.exception()
                 break
-
-def main():
-    vs = ViewServer(sys.stdin, sys.stdout)
-    vs.run()
