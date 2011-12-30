@@ -50,11 +50,13 @@ class BaseViewServer(object):
     def rereduce(self, funcs, values):
         raise NotImplementedError
 
-    def exception(self):
+    def exception(self, where="unhandled exception", fatal=True):
         (exc_type, exc_value, discard_tb) = sys.exc_info()
         exc_tb = traceback.format_exception_only(exc_type, exc_value)
         reason_string = exc_tb[-1].strip()
-        self.output("error", "unhandled exception", reason_string)
+        self.output("error", where, reason_string)
+        if fatal:
+            sys.exit(1)
 
     def log(self, string):
         self.output("log", string)
@@ -75,6 +77,7 @@ class BaseViewServer(object):
 
                 obj = json.loads(line)
                 self.handle_input(*obj)
+            except SystemExit:
+                raise
             except:
                 self.exception()
-                break
