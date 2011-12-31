@@ -12,9 +12,9 @@ setup(
     packages=["couch_named_python"],
     tests_require=["mox>=0.5"],
     license="GNU General Public License Version 3",
-#    entry_points = {
-#        "console_scripts": [
-#            "couch-named-python = couch_named_python.something:main"
-#        ]
-#    }
+    entry_points = {
+        "console_scripts": [
+            "couch-named-python = couch_named_python.pyviews:main"
+        ]
+    }
 )
