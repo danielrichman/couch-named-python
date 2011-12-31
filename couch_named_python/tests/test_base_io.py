@@ -1,4 +1,4 @@
-# Copyright 2011 (C) Daniel Richman; GNU GPL 
+# Copyright 2011 (C) Daniel Richman; GNU GPL
 
 import mox
 import json
@@ -76,10 +76,10 @@ class TestBaseViewServer(object):
 
     def test_command_exception(self):
         self.mocker.StubOutWithMock(self.vs, "handle_input")
+        self.mocker.StubOutWithMock(self.vs, "error")
         self.stdin.readline().AndReturn("""["hello"]\n""")
         self.vs.handle_input("hello").AndRaise(ValueError("testing"))
-        self.stdout.write(JSON_NL(["error", "unhandled exception",
-                "ValueError: testing"]))
+        self.vs.error("unhandled exception", "ValueError: testing")
         self.mocker.ReplayAll()
 
         self.vs_run_sysexit()
@@ -93,10 +93,10 @@ class TestBaseViewServer(object):
                 self.vs.exception(where="while compiling, for example")
 
         self.mocker.StubOutWithMock(self.vs, "handle_input")
+        self.mocker.StubOutWithMock(self.vs, "error")
         self.stdin.readline().AndReturn("""["hello"]\n""")
         self.vs.handle_input("hello").WithSideEffects(f)
-        self.stdout.write(JSON_NL(["error", "while compiling, for example",
-                            "ValueError: test error"]))
+        self.vs.error("while compiling, for example", "ValueError: test error")
         self.mocker.ReplayAll()
 
         self.vs_run_sysexit()
@@ -110,14 +110,20 @@ class TestBaseViewServer(object):
                 self.vs.exception(where="no big deal", fatal=False)
 
         self.mocker.StubOutWithMock(self.vs, "handle_input")
+        self.mocker.StubOutWithMock(self.vs, "error")
         self.stdin.readline().AndReturn("""["hello"]\n""")
         self.vs.handle_input("hello").WithSideEffects(f)
-        self.stdout.write(JSON_NL(["error", "no big deal",
-                            "ValueError: whatever"]))
+        self.vs.error("no big deal", "ValueError: whatever")
         self.stdin.readline().AndReturn("")
         self.mocker.ReplayAll()
 
         self.vs.run()
+        self.mocker.VerifyAll()
+
+    def test_error(self):
+        self.stdout.write(JSON_NL(["error", "WHAT?", "SOMETHING!"]))
+        self.mocker.ReplayAll()
+        self.vs.error("WHAT?", "SOMETHING!")
         self.mocker.VerifyAll()
 
     def test_handle_dispatch(self):
