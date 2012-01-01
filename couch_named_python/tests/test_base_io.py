@@ -107,13 +107,13 @@ class TestBaseViewServer(object):
             try:
                 raise ValueError("whatever")
             except ValueError:
-                self.vs.exception(where="no big deal", fatal=False)
+                self.vs.exception(where="compilation", fatal=False)
 
         self.mocker.StubOutWithMock(self.vs, "handle_input")
-        self.mocker.StubOutWithMock(self.vs, "error")
+        self.mocker.StubOutWithMock(self.vs, "log")
         self.stdin.readline().AndReturn("""["hello"]\n""")
         self.vs.handle_input("hello").WithSideEffects(f)
-        self.vs.error("no big deal", "ValueError: whatever")
+        self.vs.log("Ignored error, compilation, ValueError: whatever")
         self.stdin.readline().AndReturn("")
         self.mocker.ReplayAll()
 

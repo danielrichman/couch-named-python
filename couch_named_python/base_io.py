@@ -88,7 +88,7 @@ class BaseViewServer(object):
         raise NotImplementedError
 
     def set_lib(self, lib):
-        """Set the lib"""
+        """Set the current view ddoc"""
         raise NotImplementedError
 
     def map_doc(self, doc):
@@ -112,9 +112,11 @@ class BaseViewServer(object):
         (exc_type, exc_value, discard_tb) = sys.exc_info()
         exc_tb = traceback.format_exception_only(exc_type, exc_value)
         reason_string = exc_tb[-1].strip()
-        self.error(where, reason_string)
         if fatal:
+            self.error(where, reason_string)
             sys.exit(1)
+        else:
+            self.log("Ignored error, " + where + ", " + reason_string)
 
     def log(self, string):
         """send a log message to couchdb"""
