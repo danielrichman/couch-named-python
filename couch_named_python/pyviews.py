@@ -1,6 +1,7 @@
 # Copyright 2011 (C) Daniel Richman; GNU GPL 3
 
 import sys
+import os
 import gc
 import inspect
 import base_io
@@ -107,4 +108,7 @@ class NamedPythonViewServer(BasePythonViewServer):
         return f
 
 def main():
-    NamedPythonViewServer(sys.stdin, sys.stdout).run()
+    linebuf_in = os.fdopen(sys.stdin.fileno(), 'r', 1)
+    linebuf_out = os.fdopen(sys.stdout.fileno(), 'w', 1)
+
+    NamedPythonViewServer(linebuf_in, linebuf_out).run()

@@ -3,7 +3,9 @@
 import mox
 import sys
 import gc
-from ..pyviews import BasePythonViewServer, NamedPythonViewServer
+import os
+from ..pyviews import BasePythonViewServer, NamedPythonViewServer, main
+from .. import pyviews
 
 class TestBasePythonViewServer(object):
     def setup(self):
@@ -192,3 +194,36 @@ class TestNamedPythonViewServer(object):
                              "other_function")
         self.mocker.VerifyAll()
         self.mocker.ResetAll()
+
+class TestMain:
+    def setup(self):
+        self.mocker = mox.Mox()
+        self.mocker.StubOutWithMock(os, "fdopen")
+        self.sys_stdin = sys.stdin
+        self.sys_stdout = sys.stdout
+        sys.stdin = self.mocker.CreateMock(file)
+        sys.stdout = self.mocker.CreateMock(file)
+        self.vs = self.mocker.CreateMock(NamedPythonViewServer)
+        self.mocker.StubOutWithMock(pyviews, "NamedPythonViewServer")
+
+    def teardown(self):
+        sys.stdin = self.sys_stdin
+        sys.stdout = self.sys_stdout
+        self.mocker.UnsetStubs()
+
+    def test_main(self):
+        sin = object()
+        sout = object()
+
+        sys.stdin.fileno().AndReturn(1234)
+        os.fdopen(1234, 'r', 1).AndReturn(sin)
+        sys.stdout.fileno().AndReturn(7890)
+        os.fdopen(7890, 'w', 1).AndReturn(sout)
+
+        pyviews.NamedPythonViewServer(sin, sout).AndReturn(self.vs)
+        self.vs.run()
+
+        self.mocker.ReplayAll()
+
+        main()
+        self.mocker.VerifyAll()
