@@ -1,8 +1,13 @@
 # Copyright 2011 (C) Daniel Richman; GNU GPL 3
 
 import sys
-import json
 import traceback
+
+try:
+    # C speedups!
+    import simplejson as json
+except ImportError:
+    import json
 
 class BaseViewServer(object):
     """
