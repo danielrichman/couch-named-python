@@ -120,6 +120,26 @@ class TestBaseViewServer(object):
         self.vs.run()
         self.mocker.VerifyAll()
 
+    def test_exception_info(self):
+        def a_function_name(self):
+            pass
+        def f():
+            try:
+                raise ValueError("whatever")
+            except ValueError:
+                self.vs.exception(where="compilation", fatal=False,
+                                  doc_id="123", func=a_function_name)
+
+        self.mocker.StubOutWithMock(self.vs, "log")
+        self.vs.log("Ignored error, compilation, ValueError: whatever, "
+                    "doc_id=123, func_name=a_function_name, "
+                    "func_mod=couch_named_python.tests.test_base_io")
+        self.mocker.ReplayAll()
+
+        f()
+        self.mocker.VerifyAll()
+
+
     def test_error(self):
         self.stdout.write(JSON_NL(["error", "WHAT?", "SOMETHING!"]))
         self.mocker.ReplayAll()

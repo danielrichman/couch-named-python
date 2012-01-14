@@ -112,16 +112,25 @@ class BaseViewServer(object):
         """report an error to couchdb"""
         self.output("error", what, reason)
 
-    def exception(self, where="unhandled exception", fatal=True):
+    def exception(self, where="unhandled exception", fatal=True,
+                  doc_id=None, func=None):
         """report the current exception to couchdb, and exit if it's fatal"""
         (exc_type, exc_value, discard_tb) = sys.exc_info()
         exc_tb = traceback.format_exception_only(exc_type, exc_value)
-        reason_string = exc_tb[-1].strip()
+        info = exc_tb[-1].strip()
+
+        if doc_id:
+            info += ", doc_id=" + doc_id
+        if func and hasattr(func, "__name__"):
+            info += ", func_name=" + func.__name__
+        if func and hasattr(func, "__module__"):
+            info += ", func_mod=" + func.__module__
+
         if fatal:
-            self.error(where, reason_string)
+            self.error(where, info)
             sys.exit(1)
         else:
-            self.log("Ignored error, " + where + ", " + reason_string)
+            self.log("Ignored error, " + where + ", " + info)
 
     def log(self, string):
         """send a log message to couchdb"""

@@ -95,9 +95,9 @@ class TestBasePythonViewServer(object):
             yield doc["something"], None
             log("From view test")
 
-        docs = [{"word": "hippo", "something": {"123": True}},
-                {"word": "cow", "something": [4, 5, 6]},
-                {"word": "cow", "something": [5, 7, 8]}]
+        docs = [{"_id": "d1", "word": "hippo", "something": {"123": True}},
+                {"_id": "d2", "word": "cow", "something": [4, 5, 6]},
+                {"_id": "d3", "word": "cow", "something": [5, 7, 8]}]
 
         self.vs.compile("one").AndReturn(map_one)
         self.vs.okay()
@@ -111,12 +111,14 @@ class TestBasePythonViewServer(object):
                        [],
                        [[{"123": True}, None]])
         self.vs.log("Ignored error, map_runtime_error, "
-                    "KeyError: 'nonexistant'")
+                    "KeyError: 'nonexistant', doc_id=d2, func_name=map_three, "
+                    "func_mod=couch_named_python.tests.test_pyviews")
         self.vs.output([["cow 1", 1], ["cow 2", 4], ["cow 3", 9]],
                        [[False, [4, 5, 6]], [True, [4, 5, 6]]],
                        [])
         self.vs.log("Ignored error, map_runtime_error, "
-                    "KeyError: 'nonexistant'")
+                    "KeyError: 'nonexistant', doc_id=d3, func_name=map_three, "
+                    "func_mod=couch_named_python.tests.test_pyviews")
         self.vs.output([["cow 1", 1], ["cow 2", 4], ["cow 3", 9]],
                        [[False, [5, 7, 8]], [True, [5, 7, 8]]],
                        [])
@@ -174,9 +176,6 @@ class TestNamedPythonViewServer(object):
             self.mocker.ResetAll()
 
     def test_nonexistant(self):
-        #for path in ["couch_named_python.tests.example_mod.other_function",
-        #             "couch_named_python.tests.other_module"]:
-
         self.vs.output("error", "compile_load",
                        "ImportError: No module named couch_named_python_other")
         self.mocker.ReplayAll()

@@ -62,7 +62,8 @@ class BasePythonViewServer(base_io.BaseViewServer):
                     func(doc)
             except:
                 results.append([])
-                self.exception("map_runtime_error", fatal=False)
+                self.exception("map_runtime_error", fatal=False,
+                               doc_id=doc["_id"], func=func)
             else:
                 results.append(self.emissions)
 
