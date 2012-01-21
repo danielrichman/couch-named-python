@@ -15,6 +15,7 @@ class TestBasePythonViewServer(object):
         self.mocker.StubOutWithMock(self.vs, "okay")
         self.mocker.StubOutWithMock(self.vs, "output")
         self.mocker.StubOutWithMock(self.vs, "log")
+        self.mocker.StubOutWithMock(self.vs, "error")
 
     def teardown(self):
         self.mocker.UnsetStubs()
@@ -67,6 +68,26 @@ class TestBasePythonViewServer(object):
 
         for (doc_id, func_path, func, expect_compile) in tests:
             self.vs.use_ddoc(doc_id, func_path, ["args for", func_path])
+
+        self.mocker.VerifyAll()
+
+    def test_validate_doc_update(self):
+        def f(new, old, user):
+            if new == 1:
+                assert old == 2
+                assert user == 3
+            else:
+                raise ValueError("Some sort of error.")
+
+        self.vs.compile("thefunction").AndReturn(f)
+        self.vs.okay(type=int)
+        self.vs.error("validation", "ValueError: Some sort of error.")
+
+        self.mocker.ReplayAll()
+
+        self.vs.add_ddoc("design", {"validate_doc_update": "thefunction"})
+        self.vs.use_ddoc("design", "validate_doc_update", [1, 2, 3])
+        self.vs.use_ddoc("design", "validate_doc_update", ["bad", 2, 3])
 
         self.mocker.VerifyAll()
 
@@ -155,15 +176,15 @@ class TestBasePythonViewServer(object):
         self.vs.output([["hippo 1", 1], ["hippo 2", 4], ["hippo 3", 9]],
                        [],
                        [[{"123": True}, None]])
-        self.vs.log("Ignored error, map_runtime_error, "
-                    "KeyError: 'nonexistant', doc_id=d2, func_name=map_three, "
-                    "func_mod=couch_named_python.tests.test_pyviews")
+        self.vs.error("map_runtime_error",
+            "KeyError: 'nonexistant', doc_id=d2, func_name=map_three, "
+            "func_mod=couch_named_python.tests.test_pyviews")
         self.vs.output([["cow 1", 1], ["cow 2", 4], ["cow 3", 9]],
                        [[False, [4, 5, 6]], [True, [4, 5, 6]]],
                        [])
-        self.vs.log("Ignored error, map_runtime_error, "
-                    "KeyError: 'nonexistant', doc_id=d3, func_name=map_three, "
-                    "func_mod=couch_named_python.tests.test_pyviews")
+        self.vs.error("map_runtime_error",
+            "KeyError: 'nonexistant', doc_id=d3, func_name=map_three, "
+            "func_mod=couch_named_python.tests.test_pyviews")
         self.vs.output([["cow 1", 1], ["cow 2", 4], ["cow 3", 9]],
                        [[False, [5, 7, 8]], [True, [5, 7, 8]]],
                        [])

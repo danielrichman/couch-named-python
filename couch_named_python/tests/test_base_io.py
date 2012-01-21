@@ -41,11 +41,13 @@ class TestBaseViewServer(object):
         self.vs.handle_input("map_doc", {"testing": True})
         self.stdin.readline().AndReturn("")
         self.stdout.write(JSON_NL(True))
+        self.stdout.write(JSON_NL(1))
         self.stdout.write(JSON_NL([True, 1, 2, "blah", 4]))
         self.mocker.ReplayAll()
 
         self.vs.run()
         self.vs.okay()
+        self.vs.okay(int)
         self.vs.output(True, 1, 2, "blah", 4)
         self.mocker.VerifyAll()
 
@@ -110,10 +112,10 @@ class TestBaseViewServer(object):
                 self.vs.exception(where="compilation", fatal=False)
 
         self.mocker.StubOutWithMock(self.vs, "handle_input")
-        self.mocker.StubOutWithMock(self.vs, "log")
+        self.mocker.StubOutWithMock(self.vs, "error")
         self.stdin.readline().AndReturn("""["hello"]\n""")
         self.vs.handle_input("hello").WithSideEffects(f)
-        self.vs.log("Ignored error, compilation, ValueError: whatever")
+        self.vs.error("compilation", "ValueError: whatever")
         self.stdin.readline().AndReturn("")
         self.mocker.ReplayAll()
 
@@ -130,10 +132,10 @@ class TestBaseViewServer(object):
                 self.vs.exception(where="compilation", fatal=False,
                                   doc_id="123", func=a_function_name)
 
-        self.mocker.StubOutWithMock(self.vs, "log")
-        self.vs.log("Ignored error, compilation, ValueError: whatever, "
-                    "doc_id=123, func_name=a_function_name, "
-                    "func_mod=couch_named_python.tests.test_base_io")
+        self.mocker.StubOutWithMock(self.vs, "error")
+        self.vs.error("compilation", "ValueError: whatever, "
+                      "doc_id=123, func_name=a_function_name, "
+                      "func_mod=couch_named_python.tests.test_base_io")
         self.mocker.ReplayAll()
 
         f()

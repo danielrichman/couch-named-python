@@ -52,7 +52,14 @@ class BasePythonViewServer(base_io.BaseViewServer):
         pass
 
     def ddoc_validate_doc_update(self, func, args):
-        pass
+        assert len(args) == 3
+
+        try:
+            func(*args)
+        except:
+            self.exception(where="validation", func=None, fatal=False)
+        else:
+            self.okay(type=int)
 
     def reset(self, config=None, silent=False):
         """Reset state and garbage collect. Apply config, if present"""

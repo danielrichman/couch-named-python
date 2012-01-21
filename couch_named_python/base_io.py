@@ -126,19 +126,18 @@ class BaseViewServer(object):
         if func and hasattr(func, "__module__"):
             info += ", func_mod=" + func.__module__
 
+        self.error(where, info)
+
         if fatal:
-            self.error(where, info)
             sys.exit(1)
-        else:
-            self.log("Ignored error, " + where + ", " + info)
 
     def log(self, string):
         """send a log message to couchdb"""
         self.output("log", string)
 
-    def okay(self):
+    def okay(self, type=bool):
         """report success with no output"""
-        self.stdout.write(json.dumps(True) + "\n")
+        self.stdout.write(json.dumps(type(True)) + "\n")
 
     def output(self, *args):
         """print an output array (args)"""
