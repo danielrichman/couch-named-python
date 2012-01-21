@@ -2,7 +2,6 @@
 
 import sys
 import os
-import gc
 import inspect
 import base_io
 
@@ -11,6 +10,7 @@ from . import _set_vs
 class BasePythonViewServer(base_io.BaseViewServer):
     def __init__(self, stdin, stdout):
         super(BasePythonViewServer, self).__init__(stdin, stdout)
+        self.ddocs = {}
         self.reset(silent=True)
 
     def add_ddoc(self, doc_id, doc):
@@ -69,12 +69,10 @@ class BasePythonViewServer(base_io.BaseViewServer):
         self.map_funcs = []
         self.emissions = None
         self.view_ddoc = {}
-        self.ddocs = {}
         if config:
             self.query_config = config
         else:
             self.query_config = {}
-        gc.collect()
         if not silent:
             self.okay()
 

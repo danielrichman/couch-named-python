@@ -107,7 +107,6 @@ class TestBasePythonViewServer(object):
         self.mocker.ResetAll()
         assert len(self.vs.map_funcs) == 2
 
-        gc.collect()
         self.vs.okay()
         self.mocker.ReplayAll()
 
@@ -121,7 +120,6 @@ class TestBasePythonViewServer(object):
         self.test_map_doc()
         self.mocker.ResetAll()
 
-        gc.collect()
         self.vs.okay()
         self.mocker.ReplayAll()
 
