@@ -5,7 +5,7 @@ import os
 import inspect
 import base_io
 
-from . import _set_vs
+from . import _set_vs, Forbidden, Unauthorized
 
 class BasePythonViewServer(base_io.BaseViewServer):
     def __init__(self, stdin, stdout):
@@ -60,8 +60,10 @@ class BasePythonViewServer(base_io.BaseViewServer):
 
         try:
             func(*args)
-        except:
-            self.exception(where="validation", func=None, fatal=False)
+        except Forbidden as e:
+            self.error("forbidden", str(e))
+        except Unauthorized as e:
+            self.error("unauthorized", str(e))
         else:
             self.okay(type=int)
 

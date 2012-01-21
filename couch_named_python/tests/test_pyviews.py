@@ -82,22 +82,37 @@ class TestBasePythonViewServer(object):
                 assert old == 2
                 assert user == 3
                 assert secobj == 4
-            else:
-                from couch_named_python import log
+            elif new == "bad":
+                from couch_named_python import log, Forbidden
                 log("Some sort of log")
-                raise ValueError("Some sort of error.")
+                raise Forbidden("Some sort of error.")
+            elif new == "what":
+                from couch_named_python import Unauthorized
+                raise Unauthorized("You shall not pass")
+            elif new == "meh":
+                {"a dict": True}["nonexistant key"]
 
         self.vs.okay()
         self.vs.compile("thefunction").AndReturn(f)
         self.vs.okay(type=int)
         self.vs.log("Some sort of log")
-        self.vs.error("validation", "ValueError: Some sort of error.")
+        self.vs.error("forbidden", "Some sort of error.")
+        self.vs.error("unauthorized", "You shall not pass")
 
         self.mocker.ReplayAll()
 
         self.vs.add_ddoc("design", {"validate_doc_update": "thefunction"})
         self.vs.use_ddoc("design", ["validate_doc_update"], [1, 2, 3, 4])
         self.vs.use_ddoc("design", ["validate_doc_update"], ["bad", 2, 3, 4])
+        self.vs.use_ddoc("design", ["validate_doc_update"], ["what", 2, 3, 4])
+
+        try:
+            self.vs.use_ddoc("design", ["validate_doc_update"],
+                    ["meh", 2, 3, 4])
+        except KeyError as e:
+            pass
+        else:
+            raise Exception("Expected KeyError")
 
         self.mocker.VerifyAll()
 

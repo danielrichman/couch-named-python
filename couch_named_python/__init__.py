@@ -17,3 +17,11 @@ def log(message):
 def _set_vs(vs):
     global _current_vs
     _current_vs = vs
+
+class Forbidden(Exception):
+    pass
+
+class Unauthorized(Exception):
+    pass
+
+Unauthorised = Unauthorized # :-)
