@@ -12,6 +12,7 @@ class TestBasePythonViewServer(object):
         self.mocker = mox.Mox()
         self.vs = BasePythonViewServer(None, None)
         self.mocker.StubOutWithMock(self.vs, "compile")
+        self.mocker.StubOutWithMock(self.vs, "single")
         self.mocker.StubOutWithMock(self.vs, "okay")
         self.mocker.StubOutWithMock(self.vs, "output")
         self.mocker.StubOutWithMock(self.vs, "log")
@@ -94,10 +95,10 @@ class TestBasePythonViewServer(object):
 
         self.vs.okay()
         self.vs.compile("thefunction").AndReturn(f)
-        self.vs.okay(type=int)
+        self.vs.single(1)
         self.vs.log("Some sort of log")
-        self.vs.error("forbidden", "Some sort of error.")
-        self.vs.error("unauthorized", "You shall not pass")
+        self.vs.single({"forbidden": "Some sort of error."})
+        self.vs.single({"unauthorized": "You shall not pass"})
 
         self.mocker.ReplayAll()
 

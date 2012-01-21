@@ -61,11 +61,11 @@ class BasePythonViewServer(base_io.BaseViewServer):
         try:
             func(*args)
         except Forbidden as e:
-            self.error("forbidden", str(e))
+            self.single({"forbidden": str(e)})
         except Unauthorized as e:
-            self.error("unauthorized", str(e))
+            self.single({"unauthorized": str(e)})
         else:
-            self.okay(type=int)
+            self.single(1)
 
     def reset(self, config=None, silent=False):
         """Reset state and garbage collect. Apply config, if present"""

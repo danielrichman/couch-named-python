@@ -42,12 +42,14 @@ class TestBaseViewServer(object):
         self.stdin.readline().AndReturn("")
         self.stdout.write(JSON_NL(True))
         self.stdout.write(JSON_NL(1))
+        self.stdout.write(JSON_NL({"dict": "gah"}))
         self.stdout.write(JSON_NL([True, 1, 2, "blah", 4]))
         self.mocker.ReplayAll()
 
         self.vs.run()
         self.vs.okay()
-        self.vs.okay(int)
+        self.vs.single(1)
+        self.vs.single({"dict": "gah"})
         self.vs.output(True, 1, 2, "blah", 4)
         self.mocker.VerifyAll()
 

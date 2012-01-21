@@ -135,13 +135,17 @@ class BaseViewServer(object):
         """send a log message to couchdb"""
         self.output("log", string)
 
-    def okay(self, type=bool):
+    def single(self, obj):
+        """print out a single json object"""
+        self.stdout.write(json.dumps(obj) + "\n")
+
+    def okay(self):
         """report success with no output"""
-        self.stdout.write(json.dumps(type(True)) + "\n")
+        self.single(True)
 
     def output(self, *args):
         """print an output array (args)"""
-        self.stdout.write(json.dumps(args) + "\n")
+        self.single(args)
 
     def run(self):
         """run until self.stdin is closed, reading and handling commands"""
