@@ -44,23 +44,23 @@ class TestBasePythonViewServer(object):
                  "validate_doc_update": "function:6"}
 
         # doc_id, func_path, func, expect compilation
-        tests = [("example", "shows.show1", "function:1", True),
-                 ("example", "shows.show2", "function:2", True),
-                 ("example", "shows.show2", "function:2", False),
-                 ("example", "shows.show1", "function:1", False),
-                 ("elpmaxe", "validate_doc_update", "function:6", True),
-                 ("example", "shows.show2", "function:2", False),
-                 ("elpmaxe", "filters.filter5", "function:5", True),
-                 ("example", "updates.update4", "function:4", True),
-                 ("example", "lists.list3", "function:3", True),
-                 ("elpmaxe", "filters.filter5", "function:5", False)]
+        tests = [("example", ["shows","show1"], "function:1", True),
+                 ("example", ["shows","show2"], "function:2", True),
+                 ("example", ["shows","show2"], "function:2", False),
+                 ("example", ["shows","show1"], "function:1", False),
+                 ("elpmaxe", ["validate_doc_update"], "function:6", True),
+                 ("example", ["shows","show2"], "function:2", False),
+                 ("elpmaxe", ["filters","filter5"], "function:5", True),
+                 ("example", ["updates","update4"], "function:4", True),
+                 ("example", ["lists","list3"], "function:3", True),
+                 ("elpmaxe", ["filters","filter5"], "function:5", False)]
 
         self.vs.okay()
         self.vs.okay()
 
         for (doc_id, func_path, func, expect_compile) in tests:
             c = {"a compiled function": True, "sauce": func}
-            func_type = func_path.split(".")[0]
+            func_type = func_path[0]
             if expect_compile:
                 self.vs.compile(func).AndReturn(c)
             h = "ddoc_" + func_type
@@ -95,8 +95,8 @@ class TestBasePythonViewServer(object):
         self.mocker.ReplayAll()
 
         self.vs.add_ddoc("design", {"validate_doc_update": "thefunction"})
-        self.vs.use_ddoc("design", "validate_doc_update", [1, 2, 3])
-        self.vs.use_ddoc("design", "validate_doc_update", ["bad", 2, 3])
+        self.vs.use_ddoc("design", ["validate_doc_update"], [1, 2, 3])
+        self.vs.use_ddoc("design", ["validate_doc_update"], ["bad", 2, 3])
 
         self.mocker.VerifyAll()
 

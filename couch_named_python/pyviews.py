@@ -23,8 +23,9 @@ class BasePythonViewServer(base_io.BaseViewServer):
         assert doc_id in self.ddocs
         (doc, cache) = self.ddocs[doc_id]
 
-        func_path_parts = func_path.split(".")
-        func_type = func_path_parts[0]
+        # tuplify it, so that it can be used as a dict key.
+        func_path = tuple(func_path)
+        func_type = func_path[0]
 
         assert func_type in ["shows", "lists", "filters", "updates",
                              "validate_doc_update"]
@@ -33,7 +34,7 @@ class BasePythonViewServer(base_io.BaseViewServer):
             func = cache[func_path]
         else:
             find = doc
-            for part in func_path_parts:
+            for part in func_path:
                 find = find[part]
             func = self.compile(find)
             cache[func_path] = func
