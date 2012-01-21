@@ -21,6 +21,8 @@ class TestBasePythonViewServer(object):
         self.mocker.UnsetStubs()
 
     def test_add_ddoc(self):
+        self.vs.okay()
+        self.vs.okay()
         self.mocker.ReplayAll()
         self.vs.add_ddoc("test_designdoc", {"test": True})
         self.vs.add_ddoc("second_doc", {"second": True})
@@ -53,6 +55,9 @@ class TestBasePythonViewServer(object):
                  ("example", "lists.list3", "function:3", True),
                  ("elpmaxe", "filters.filter5", "function:5", False)]
 
+        self.vs.okay()
+        self.vs.okay()
+
         for (doc_id, func_path, func, expect_compile) in tests:
             c = {"a compiled function": True, "sauce": func}
             func_type = func_path.split(".")[0]
@@ -77,10 +82,14 @@ class TestBasePythonViewServer(object):
                 assert old == 2
                 assert user == 3
             else:
+                from couch_named_python import log
+                log("Some sort of log")
                 raise ValueError("Some sort of error.")
 
+        self.vs.okay()
         self.vs.compile("thefunction").AndReturn(f)
         self.vs.okay(type=int)
+        self.vs.log("Some sort of log")
         self.vs.error("validation", "ValueError: Some sort of error.")
 
         self.mocker.ReplayAll()

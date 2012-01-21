@@ -16,6 +16,7 @@ class BasePythonViewServer(base_io.BaseViewServer):
     def add_ddoc(self, doc_id, doc):
         """Add a new ddoc"""
         self.ddocs[doc_id] = (doc, {})
+        self.okay()
 
     def use_ddoc(self, doc_id, func_path, func_args):
         """Call a function of a previously added ddoc"""
@@ -37,7 +38,9 @@ class BasePythonViewServer(base_io.BaseViewServer):
             func = self.compile(find)
             cache[func_path] = func
 
+        _set_vs(self)
         getattr(self, "ddoc_" + func_type)(func, func_args)
+        _set_vs(None)
 
     def ddoc_shows(self, func, args):
         pass
@@ -64,7 +67,7 @@ class BasePythonViewServer(base_io.BaseViewServer):
     def reset(self, config=None, silent=False):
         """Reset state and garbage collect. Apply config, if present"""
         self.map_funcs = []
-        self.emissions = []
+        self.emissions = None
         self.view_ddoc = {}
         self.ddocs = {}
         if config:
@@ -109,7 +112,7 @@ class BasePythonViewServer(base_io.BaseViewServer):
                 results.append(self.emissions)
 
         _set_vs(None)
-        self.emissions = []
+        self.emissions = None
 
         self.output(*results)
 
