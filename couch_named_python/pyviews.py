@@ -56,7 +56,7 @@ class BasePythonViewServer(base_io.BaseViewServer):
         pass
 
     def ddoc_validate_doc_update(self, func, args):
-        assert len(args) == 3
+        assert len(args) == 4 # newdoc, olddoc, userctx, secobj
 
         try:
             func(*args)

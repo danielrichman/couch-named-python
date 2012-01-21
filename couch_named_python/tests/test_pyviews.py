@@ -77,10 +77,11 @@ class TestBasePythonViewServer(object):
         self.mocker.VerifyAll()
 
     def test_validate_doc_update(self):
-        def f(new, old, user):
+        def f(new, old, user, secobj):
             if new == 1:
                 assert old == 2
                 assert user == 3
+                assert secobj == 4
             else:
                 from couch_named_python import log
                 log("Some sort of log")
@@ -95,8 +96,8 @@ class TestBasePythonViewServer(object):
         self.mocker.ReplayAll()
 
         self.vs.add_ddoc("design", {"validate_doc_update": "thefunction"})
-        self.vs.use_ddoc("design", ["validate_doc_update"], [1, 2, 3])
-        self.vs.use_ddoc("design", ["validate_doc_update"], ["bad", 2, 3])
+        self.vs.use_ddoc("design", ["validate_doc_update"], [1, 2, 3, 4])
+        self.vs.use_ddoc("design", ["validate_doc_update"], ["bad", 2, 3, 4])
 
         self.mocker.VerifyAll()
 
