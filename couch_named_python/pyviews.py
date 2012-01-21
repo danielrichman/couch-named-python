@@ -15,10 +15,43 @@ class BasePythonViewServer(base_io.BaseViewServer):
 
     def add_ddoc(self, doc_id, doc):
         """Add a new ddoc"""
-        pass
+        self.ddocs[doc_id] = (doc, {})
 
     def use_ddoc(self, doc_id, func_path, func_args):
         """Call a function of a previously added ddoc"""
+        assert doc_id in self.ddocs
+        (doc, cache) = self.ddocs[doc_id]
+
+        func_path_parts = func_path.split(".")
+        func_type = func_path_parts[0]
+
+        assert func_type in ["shows", "lists", "filters", "updates",
+                             "validate_doc_update"]
+
+        if func_path in cache:
+            func = cache[func_path]
+        else:
+            find = doc
+            for part in func_path_parts:
+                find = find[part]
+            func = self.compile(find)
+            cache[func_path] = func
+
+        getattr(self, "ddoc_" + func_type)(func, func_args)
+
+    def ddoc_shows(self, func, args):
+        pass
+
+    def ddoc_lists(self, func, args):
+        pass
+
+    def ddoc_filters(self, func, args):
+        pass
+
+    def ddoc_updates(self, func, args):
+        pass
+
+    def ddoc_validate_doc_update(self, func, args):
         pass
 
     def reset(self, config=None, silent=False):
@@ -26,6 +59,7 @@ class BasePythonViewServer(base_io.BaseViewServer):
         self.map_funcs = []
         self.emissions = []
         self.view_ddoc = {}
+        self.ddocs = {}
         if config:
             self.query_config = config
         else:

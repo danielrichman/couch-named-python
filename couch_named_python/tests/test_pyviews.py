@@ -20,10 +20,55 @@ class TestBasePythonViewServer(object):
         self.mocker.UnsetStubs()
 
     def test_add_ddoc(self):
-        pass
+        self.mocker.ReplayAll()
+        self.vs.add_ddoc("test_designdoc", {"test": True})
+        self.vs.add_ddoc("second_doc", {"second": True})
+        assert self.vs.ddocs["test_designdoc"] == ({"test": True}, {})
+        assert self.vs.ddocs["second_doc"] == ({"second": True}, {})
+        self.mocker.VerifyAll()
 
     def test_use_ddoc(self):
-        pass
+        self.mocker.StubOutWithMock(self.vs, "ddoc_shows")
+        self.mocker.StubOutWithMock(self.vs, "ddoc_lists")
+        self.mocker.StubOutWithMock(self.vs, "ddoc_filters")
+        self.mocker.StubOutWithMock(self.vs, "ddoc_updates")
+        self.mocker.StubOutWithMock(self.vs, "ddoc_validate_doc_update")
+        
+        doc_a = {"shows": {"show1": "function:1", "show2": "function:2"},
+                 "lists": {"list3": "function:3"},
+                 "updates": {"update4": "function:4"}}
+        doc_b = {"filters": {"filter5": "function:5"},
+                 "validate_doc_update": "function:6"}
+
+        # doc_id, func_path, func, expect compilation
+        tests = [("example", "shows.show1", "function:1", True),
+                 ("example", "shows.show2", "function:2", True),
+                 ("example", "shows.show2", "function:2", False),
+                 ("example", "shows.show1", "function:1", False),
+                 ("elpmaxe", "validate_doc_update", "function:6", True),
+                 ("example", "shows.show2", "function:2", False),
+                 ("elpmaxe", "filters.filter5", "function:5", True),
+                 ("example", "updates.update4", "function:4", True),
+                 ("example", "lists.list3", "function:3", True),
+                 ("elpmaxe", "filters.filter5", "function:5", False)]
+
+        for (doc_id, func_path, func, expect_compile) in tests:
+            c = {"a compiled function": True, "sauce": func}
+            func_type = func_path.split(".")[0]
+            if expect_compile:
+                self.vs.compile(func).AndReturn(c)
+            h = "ddoc_" + func_type
+            getattr(self.vs, h)(c, ["args for", func_path])
+
+        self.mocker.ReplayAll()
+
+        self.vs.add_ddoc("example", doc_a)
+        self.vs.add_ddoc("elpmaxe", doc_b)
+
+        for (doc_id, func_path, func, expect_compile) in tests:
+            self.vs.use_ddoc(doc_id, func_path, ["args for", func_path])
+
+        self.mocker.VerifyAll()
 
     def test_reset(self):
         self.mocker.StubOutWithMock(gc, "collect")
