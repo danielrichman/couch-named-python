@@ -44,7 +44,8 @@ Then the design doc might be
 
     {"id": "_design/location",
      "views": {"towns": {"map": "myviews.townmap"}},
-     "validate_doc_update": "myviews.validate"}
+     "validate_doc_update": "myviews.validate",
+     "language": "python"}
 
 Note that couch-named-python doesn't reload() modules, so if you change
 something you'll need to give it a kick by killing the viewserver process
