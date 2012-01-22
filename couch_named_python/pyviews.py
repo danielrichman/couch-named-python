@@ -44,17 +44,17 @@ class BasePythonViewServer(base_io.BaseViewServer):
         _set_vs(None)
 
     def ddoc_shows(self, func, args):
-        pass
+        pass # TODO
 
     def ddoc_lists(self, func, args):
-        pass
+        pass # TODO
 
     def ddoc_filters(self, func, args):
         (docs, req) = args
         self.output(True, [bool(func(doc, req)) for doc in docs])
 
     def ddoc_updates(self, func, args):
-        pass
+        pass # TODO
 
     def ddoc_validate_doc_update(self, func, args):
         assert len(args) == 4 # newdoc, olddoc, userctx, secobj
@@ -124,11 +124,39 @@ class BasePythonViewServer(base_io.BaseViewServer):
 
     def reduce(self, funcs, data):
         """run reduce functions on some data"""
-        pass
+        # data is [[key, id], value].
+        keys = [i[0] for i in data]
+        values = [i[1] for i in data]
+        results = []
+
+        for func_str in funcs:
+            func = self.compile(func_str)
+            try:
+                r = func(keys, values, False)
+            except:
+                self.exception("reduce_runtime_error", fatal=False, func=func)
+                r = None
+            results.append(r)
+
+        # TODO: self.query_config["reduce_limit"]
+        self.output(True, results)
 
     def rereduce(self, funcs, values):
         """run reduce functions on some reduce function outputs"""
-        pass
+        results = []
+
+        for func_str in funcs:
+            func = self.compile(func_str)
+            try:
+                r = func(None, values, True)
+            except:
+                self.exception("rereduce_runtime_error", fatal=False,
+                               func=func)
+                r = None
+            results.append(r)
+
+        # TODO: self.query_config["reduce_limit"]
+        self.output(True, results)
 
     def compile(self, function):
         """produce something that can be executed, from a string"""

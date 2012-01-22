@@ -16,7 +16,6 @@ class TestBasePythonViewServer(object):
         self.mocker.StubOutWithMock(self.vs, "okay")
         self.mocker.StubOutWithMock(self.vs, "output")
         self.mocker.StubOutWithMock(self.vs, "log")
-        self.mocker.StubOutWithMock(self.vs, "error")
 
     def teardown(self):
         self.mocker.UnsetStubs()
@@ -218,13 +217,13 @@ class TestBasePythonViewServer(object):
         self.vs.output([["hippo 1", 1], ["hippo 2", 4], ["hippo 3", 9]],
                        [],
                        [[{"123": True}, None]])
-        self.vs.error("map_runtime_error",
+        self.vs.log("Ignored exception (map_runtime_error): "
             "KeyError: 'nonexistant', doc_id=d2, func_name=map_three, "
             "func_mod=couch_named_python.tests.test_pyviews")
         self.vs.output([["cow 1", 1], ["cow 2", 4], ["cow 3", 9]],
                        [[False, [4, 5, 6]], [True, [4, 5, 6]]],
                        [])
-        self.vs.error("map_runtime_error",
+        self.vs.log("Ignored exception (map_runtime_error): "
             "KeyError: 'nonexistant', doc_id=d3, func_name=map_three, "
             "func_mod=couch_named_python.tests.test_pyviews")
         self.vs.output([["cow 1", 1], ["cow 2", 4], ["cow 3", 9]],
@@ -241,9 +240,57 @@ class TestBasePythonViewServer(object):
         self.mocker.VerifyAll()
 
     def test_reduce(self):
-        pass
+        def f(keys, values, rereduce):
+            assert rereduce == False
+            assert keys == [["key1", "id1"], ["key2", "id2"]]
+            return sum(values) + 41
+        def g(k, v, r):
+            if v[0] == 3:
+                raise ValueError("Yeah whatever")
+            else:
+                return {"meh": True}
+
+        self.vs.compile("func1").AndReturn(f)
+        self.vs.compile("func2").AndReturn(g)
+        self.vs.output(True, [41 + 102 + 251, {"meh": True}])
+        self.vs.compile("func1").AndReturn(f)
+        self.vs.compile("func2").AndReturn(g)
+        self.vs.log("Ignored exception (reduce_runtime_error): "
+                "ValueError: Yeah whatever, func_name=g, "
+                "func_mod=couch_named_python.tests.test_pyviews")
+        self.vs.output(True, [41 + 3 + 2, None])
+        self.mocker.ReplayAll()
+
+        self.vs.reduce(["func1", "func2"],
+            [[["key1", "id1"], 102], [["key2", "id2"], 251]])
+        self.vs.reduce(["func1", "func2"],
+            [[["key1", "id1"], 3], [["key2", "id2"], 2]])
+        self.mocker.VerifyAll()
 
     def test_rereduce(self):
+        def f(keys, values, rereduce):
+            assert rereduce
+            return sum(values) - 1
+        def g(k, v, r):
+            assert r
+            s = sum(v)
+            assert s != 5
+            return s
+
+        self.vs.compile("func1").AndReturn(f)
+        self.vs.compile("func2").AndReturn(g)
+        self.vs.output(True, [11, 12])
+        self.vs.compile("func1").AndReturn(f)
+        self.vs.compile("func2").AndReturn(g)
+        self.vs.log("Ignored exception (rereduce_runtime_error): "
+                "AssertionError, func_name=g, "
+                "func_mod=couch_named_python.tests.test_pyviews")
+        self.vs.output(True, [4, None])
+        self.mocker.ReplayAll()
+
+        self.vs.rereduce(["func1", "func2"], [7, 5])
+        self.vs.rereduce(["func1", "func2"], [-5, 10])
+        self.mocker.VerifyAll()
         pass
 
 class TestNamedPythonViewServer(object):

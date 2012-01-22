@@ -11,7 +11,7 @@ except ImportError:
 
 class BaseViewServer(object):
     """
-    BaseViewServer handles IO, exception handling, and dispating commands.
+    BaseViewServer handles IO, exception handling, and dispatching commands.
 
     View Server Usage::
 
@@ -108,10 +108,6 @@ class BaseViewServer(object):
         """run reduce functions on some reduce function outputs"""
         raise NotImplementedError
 
-    def error(self, what, reason):
-        """report an error to couchdb"""
-        self.output("error", what, reason)
-
     def exception(self, where="unhandled exception", fatal=True,
                   doc_id=None, func=None):
         """report the current exception to couchdb, and exit if it's fatal"""
@@ -126,10 +122,11 @@ class BaseViewServer(object):
         if func and hasattr(func, "__module__"):
             info += ", func_mod=" + func.__module__
 
-        self.error(where, info)
-
         if fatal:
+            self.output("error", where, info)
             sys.exit(1)
+        else:
+            self.log("Ignored exception ({0}): {1}".format(where, info))
 
     def log(self, string):
         """send a log message to couchdb"""
