@@ -50,7 +50,8 @@ class BasePythonViewServer(base_io.BaseViewServer):
         pass
 
     def ddoc_filters(self, func, args):
-        pass
+        (docs, req) = args
+        self.output(True, [bool(func(doc, req)) for doc in docs])
 
     def ddoc_updates(self, func, args):
         pass

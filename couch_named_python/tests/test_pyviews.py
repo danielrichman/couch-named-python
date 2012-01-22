@@ -117,6 +117,24 @@ class TestBasePythonViewServer(object):
 
         self.mocker.VerifyAll()
 
+    def test_filter(self):
+        def f(doc, req):
+            assert req["userCtx"] == 4
+            n = doc["n"]
+            if n == 0:
+                return 0
+            return n in [2, 3, 5]
+
+        self.vs.okay()
+        self.vs.compile("filterfunc").AndReturn(f)
+        self.vs.output(True, [False, False, True, True, False, True])
+        self.mocker.ReplayAll()
+
+        self.vs.add_ddoc("w/hat", {"filters": {"prime": "filterfunc"}})
+        self.vs.use_ddoc("w/hat", ["filters", "prime"],
+                [[{"n": i} for i in xrange(6)], {"userCtx": 4}])
+        self.mocker.VerifyAll()
+
     def test_reset(self):
         self.mocker.StubOutWithMock(gc, "collect")
 
