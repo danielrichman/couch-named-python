@@ -7,6 +7,9 @@ import base_io
 
 from . import _set_vs, Forbidden, Unauthorized
 
+# TODO: some method for tracking loaded code version, and reloading()
+# TODO: an easy method for building a design doc from a module
+
 class BasePythonViewServer(base_io.BaseViewServer):
     def __init__(self, stdin, stdout):
         super(BasePythonViewServer, self).__init__(stdin, stdout)
@@ -14,7 +17,7 @@ class BasePythonViewServer(base_io.BaseViewServer):
         self.reset(silent=True)
 
     def add_ddoc(self, doc_id, doc):
-        """Add a new ddoc"""
+        """Add a new ddoc, or replace a ddoc"""
         self.ddocs[doc_id] = (doc, {})
         self.okay()
 
@@ -44,17 +47,17 @@ class BasePythonViewServer(base_io.BaseViewServer):
         _set_vs(None)
 
     def ddoc_shows(self, func, args):
-        pass # TODO
+        pass # TODO ddoc_shows
 
     def ddoc_lists(self, func, args):
-        pass # TODO
+        pass # TODO ddoc_lists
 
     def ddoc_filters(self, func, args):
         (docs, req) = args
         self.output(True, [bool(func(doc, req)) for doc in docs])
 
     def ddoc_updates(self, func, args):
-        pass # TODO
+        pass # TODO ddoc_updates
 
     def ddoc_validate_doc_update(self, func, args):
         assert len(args) == 4 # newdoc, olddoc, userctx, secobj
