@@ -5,24 +5,29 @@
 _current_vs = None
 _current_funcs = None
 
-def emit(key, value):
-    global _current_vs
-    assert _can("emit")
-    _current_vs.emit(key, value)
-
-def log(message):
-    global _current_vs
-    assert _can("log")
-    _current_vs.log(message)
-
-def _can(func):
-    global _current_vs, _current_funcs
-    return _current_vs and func in _current_funcs
-
 def _set_vs(vs, funcs=[]):
     global _current_vs, _current_funcs
     _current_vs = vs
     _current_funcs = funcs
+
+class VSFunc(object):
+    """A callable object that proxies calls to the view server object"""
+
+    def __init__(self, name):
+        self.name = name
+
+    def vs(self):
+        global _current_vs, _current_funcs
+        assert _current_vs
+        assert self.name in _current_funcs
+        return getattr(_current_vs, self.name)
+
+    def __call__(self, *args, **kwargs):
+        self.vs()(*args, **kwargs)
+
+for funcname in ["emit", "log", "start", "send", "get_row"]:
+    locals()[funcname] = VSFunc(funcname)
+del funcname
 
 class Forbidden(Exception):
     pass
