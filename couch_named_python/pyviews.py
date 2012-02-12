@@ -42,9 +42,7 @@ class BasePythonViewServer(base_io.BaseViewServer):
             func = self.compile(find)
             cache[func_path] = func
 
-        _set_vs(self)
         getattr(self, "ddoc_" + func_type)(func, func_args)
-        _set_vs(None)
 
     def ddoc_shows(self, func, args):
         pass # TODO ddoc_shows
@@ -54,13 +52,17 @@ class BasePythonViewServer(base_io.BaseViewServer):
 
     def ddoc_filters(self, func, args):
         (docs, req) = args
+        _set_vs(self, ["log"])
         self.output(True, [bool(func(doc, req)) for doc in docs])
+        _set_vs(None)
 
     def ddoc_updates(self, func, args):
         pass # TODO ddoc_updates
 
     def ddoc_validate_doc_update(self, func, args):
         assert len(args) == 4 # newdoc, olddoc, userctx, secobj
+
+        _set_vs(self, ["log"])
 
         try:
             func(*args)
@@ -70,6 +72,8 @@ class BasePythonViewServer(base_io.BaseViewServer):
             self.single({"unauthorized": str(e)})
         else:
             self.single(1)
+
+        _set_vs(None)
 
     def reset(self, config=None, silent=False):
         """Reset state and garbage collect. Apply config, if present"""
@@ -97,7 +101,7 @@ class BasePythonViewServer(base_io.BaseViewServer):
         """run all map functions on a document"""
         assert self.map_funcs
 
-        _set_vs(self)
+        _set_vs(self, ["emit", "log"])
         results = []
 
         for func in self.map_funcs:
@@ -132,6 +136,8 @@ class BasePythonViewServer(base_io.BaseViewServer):
         values = [i[1] for i in data]
         results = []
 
+        _set_vs(self, ["log"])
+
         for func_str in funcs:
             func = self.compile(func_str)
             try:
@@ -141,12 +147,16 @@ class BasePythonViewServer(base_io.BaseViewServer):
                 r = None
             results.append(r)
 
+        _set_vs(None)
+
         # TODO: self.query_config["reduce_limit"]
         self.output(True, results)
 
     def rereduce(self, funcs, values):
         """run reduce functions on some reduce function outputs"""
         results = []
+
+        _set_vs(self, ["log"])
 
         for func_str in funcs:
             func = self.compile(func_str)
@@ -157,6 +167,8 @@ class BasePythonViewServer(base_io.BaseViewServer):
                                func=func)
                 r = None
             results.append(r)
+
+        _set_vs(None)
 
         # TODO: self.query_config["reduce_limit"]
         self.output(True, results)
