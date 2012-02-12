@@ -6,7 +6,7 @@ setup(
     version="0.1dev",
     author="Daniel Richman",
     author_email="main@danielrichman.co.uk",
-    url=" TODO ",
+    url="https://github.com/danielrichman/couch-named-python",
     description="CouchDB view server that executes functions "
                 "on the python path by name",
     packages=["couch_named_python"],
