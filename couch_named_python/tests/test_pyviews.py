@@ -134,6 +134,70 @@ class TestBasePythonViewServer(object):
                 [[{"n": i} for i in xrange(6)], {"userCtx": 4}])
         self.mocker.VerifyAll()
 
+    def test_ddoc_shows(self):
+        def f(doc, req):
+            assert req["value"] == 4
+            if doc["case"] == 1:
+                return {"body": doc["sometext"]}
+            elif doc["case"] == 2:
+                return {"code": 500}
+            else:
+                return doc["sometext"]
+        def g(doc, req):
+            from couch_named_python import start, send
+            start({"code": 403})
+            send("You can't be here\n")
+            send("It's dangerous\n")
+        def h(doc, req):
+            from couch_named_python import NotFound, Redirect, send
+            send("Some text")
+            if doc == None:
+                raise NotFound("Help")
+            elif "nf" in doc:
+                raise NotFound()
+            elif "meh" in doc:
+                raise Redirect("/somewhere_else")
+            elif "wat" in doc:
+                raise Redirect("/wat", permanent=True)
+
+        self.vs.okay()
+
+        self.vs.compile("showf").AndReturn(f)
+        self.vs.output("resp", {"body": "Test text 1"})
+        self.vs.output("resp", {"code": 500})
+        self.vs.output("resp", {"body": "Test text 2"})
+
+        self.vs.compile("showg").AndReturn(g)
+        self.vs.output("resp", {"code": 403,
+                                "body": "You can't be here\nIt's dangerous\n"})
+
+        self.vs.compile("showh").AndReturn(h)
+        self.vs.output("error", "not_found", "Help")
+        self.vs.output("error", "not_found", "document not found")
+        self.vs.output("resp", {"code": 302, "headers":
+                            {"Location": "/somewhere_else"}})
+        self.vs.output("resp", {"code": 301, "headers":
+                            {"Location": "/wat"}})
+
+        self.mocker.ReplayAll()
+        self.vs.add_ddoc("desid", {"shows": {"f": "showf", "g": "showg",
+                            "h": "showh"}})
+
+        self.vs.use_ddoc("desid", ["shows", "f"], [{"case": 1,
+                            "sometext": "Test text 1"}, {"value": 4}])
+        self.vs.use_ddoc("desid", ["shows", "f"], [{"case": 2}, {"value": 4}])
+        self.vs.use_ddoc("desid", ["shows", "f"], [{"case": 3, 
+                            "sometext": "Test text 2"}, {"value": 4}])
+
+        self.vs.use_ddoc("desid", ["shows", "g"], [{}, {}])
+
+        self.vs.use_ddoc("desid", ["shows", "h"], [None, {}])
+        self.vs.use_ddoc("desid", ["shows", "h"], [{"nf": True}, {}])
+        self.vs.use_ddoc("desid", ["shows", "h"], [{"meh": True}, {}])
+        self.vs.use_ddoc("desid", ["shows", "h"], [{"wat": True}, {}])
+
+        self.mocker.VerifyAll()
+
     def test_reset(self):
         self.mocker.StubOutWithMock(gc, "collect")
 
@@ -291,7 +355,6 @@ class TestBasePythonViewServer(object):
         self.vs.rereduce(["func1", "func2"], [7, 5])
         self.vs.rereduce(["func1", "func2"], [-5, 10])
         self.mocker.VerifyAll()
-        pass
 
 class TestNamedPythonViewServer(object):
     def setup(self):

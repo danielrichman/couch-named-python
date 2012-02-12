@@ -5,10 +5,11 @@ import os
 import inspect
 import base_io
 
-from . import _set_vs, Forbidden, Unauthorized
+from . import _set_vs, Forbidden, Unauthorized, NotFound, Redirect
 
 # TODO: some method for tracking loaded code version, and reloading()
 # TODO: an easy method for building a design doc from a module
+# TODO: docstrings
 
 class BasePythonViewServer(base_io.BaseViewServer):
     def __init__(self, stdin, stdout):
@@ -45,7 +46,52 @@ class BasePythonViewServer(base_io.BaseViewServer):
         getattr(self, "ddoc_" + func_type)(func, func_args)
 
     def ddoc_shows(self, func, args):
-        pass # TODO ddoc_shows
+        (doc, req) = args
+
+        _set_vs(self, ["start", "send", "log"])
+        self.response_start = None
+        self.chunks = []
+
+        try:
+            value = func(doc, req)
+        except NotFound as e:
+            msg = str(e)
+            if not msg:
+                msg = "document not found"
+            self.output("error", "not_found", msg)
+        except Redirect as e:
+            if e.permanent:
+                c = 301
+            else:
+                c = 302
+            self.output("resp", {"code": c, "headers": {"Location": e.url}})
+        else:
+            if not value:
+                value = {}
+
+            if isinstance(value, basestring):
+                value = {"body": value}
+
+            if self.chunks:
+                if "body" not in value:
+                    value["body"] = ""
+
+                value["body"] = ''.join(self.chunks) + value["body"]
+
+            if self.response_start and "headers" in self.response_start \
+                    and "headers" in value:
+                value["headers"].update(self.response_start["headers"])
+                del self.response_start["headers"]
+
+            if self.response_start:
+                value.update(self.response_start)
+
+            self.output("resp", value)
+
+        self.response_start = None
+        self.chunks = []
+
+        _set_vs(None)
 
     def ddoc_lists(self, func, args):
         pass # TODO ddoc_lists
@@ -75,10 +121,22 @@ class BasePythonViewServer(base_io.BaseViewServer):
 
         _set_vs(None)
 
+    def start(self, response_start):
+        assert self.response_start == None
+        self.response_start = response_start
+
+    def send(self, chunk):
+        self.chunks.append(chunk)
+
+    def get_row(self):
+        pass # TODO get_row
+
     def reset(self, config=None, silent=False):
         """Reset state and garbage collect. Apply config, if present"""
         self.map_funcs = []
         self.emissions = None
+        self.response_start = None
+        self.chunks = None
         self.view_ddoc = {}
         if config:
             self.query_config = config

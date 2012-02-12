@@ -35,4 +35,12 @@ class Forbidden(Exception):
 class Unauthorized(Exception):
     pass
 
+class NotFound(Exception):
+    pass
+
+class Redirect(Exception):
+    def __init__(self, url, permanent=False):
+        self.url = url
+        self.permanent = permanent
+
 Unauthorised = Unauthorized # :-)
