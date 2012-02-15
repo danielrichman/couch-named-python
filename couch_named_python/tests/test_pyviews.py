@@ -83,12 +83,12 @@ class TestBasePythonViewServer(object):
                 assert user == 3
                 assert secobj == 4
             elif new == "bad":
-                from couch_named_python import log, Forbidden
+                from couch_named_python import log, ForbiddenError
                 log("Some sort of log")
-                raise Forbidden("Some sort of error.")
+                raise ForbiddenError("Some sort of error.")
             elif new == "what":
-                from couch_named_python import Unauthorized
-                raise Unauthorized("You shall not pass")
+                from couch_named_python import UnauthorizedError
+                raise UnauthorizedError("You shall not pass")
             elif new == "meh":
                 {"a dict": True}["nonexistant key"]
 
@@ -149,12 +149,12 @@ class TestBasePythonViewServer(object):
             send("You can't be here\n")
             send("It's dangerous\n")
         def h(doc, req):
-            from couch_named_python import NotFound, Redirect, send
+            from couch_named_python import NotFoundError, Redirect, send
             send("Some text")
             if doc == None:
-                raise NotFound("Help")
+                raise NotFoundError("Help")
             elif "nf" in doc:
-                raise NotFound()
+                raise NotFoundError()
             elif "meh" in doc:
                 raise Redirect("/somewhere_else")
             elif "wat" in doc:

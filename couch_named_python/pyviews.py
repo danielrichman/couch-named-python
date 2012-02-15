@@ -5,7 +5,8 @@ import os
 import inspect
 import base_io
 
-from . import _set_vs, Forbidden, Unauthorized, NotFound, Redirect
+from . import _set_vs, ForbiddenError, UnauthorizedError, \
+        NotFoundError, Redirect
 
 # TODO: some method for tracking loaded code version, and reloading()
 # TODO: an easy method for building a design doc from a module
@@ -54,7 +55,7 @@ class BasePythonViewServer(base_io.BaseViewServer):
 
         try:
             value = func(doc, req)
-        except NotFound as e:
+        except NotFoundError as e:
             msg = str(e)
             if not msg:
                 msg = "document not found"
@@ -112,9 +113,9 @@ class BasePythonViewServer(base_io.BaseViewServer):
 
         try:
             func(*args)
-        except Forbidden as e:
+        except ForbiddenError as e:
             self.single({"forbidden": str(e)})
-        except Unauthorized as e:
+        except UnauthorizedError as e:
             self.single({"unauthorized": str(e)})
         else:
             self.single(1)

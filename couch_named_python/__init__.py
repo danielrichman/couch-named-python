@@ -29,13 +29,13 @@ for funcname in ["emit", "log", "start", "send", "get_row"]:
     locals()[funcname] = VSFunc(funcname)
 del funcname
 
-class Forbidden(Exception):
+class ForbiddenError(Exception):
     pass
 
-class Unauthorized(Exception):
+class UnauthorizedError(Exception):
     pass
 
-class NotFound(Exception):
+class NotFoundError(Exception):
     pass
 
 class Redirect(Exception):
@@ -43,4 +43,4 @@ class Redirect(Exception):
         self.url = url
         self.permanent = permanent
 
-Unauthorised = Unauthorized # :-)
+UnauthorisedError = UnauthorizedError # :-)
