@@ -1,9 +1,9 @@
 #!/usr/bin/env python
-from setuptools import setup
+from distutils.core import setup
 
 setup(
     name="couch-named-python",
-    version="0.1dev",
+    version="0.1.2dev",
     author="Daniel Richman",
     author_email="main@danielrichman.co.uk",
     url="https://github.com/danielrichman/couch-named-python",
