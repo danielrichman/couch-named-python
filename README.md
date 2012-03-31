@@ -58,7 +58,7 @@ Rational for @version decorator
 When the code is stored in the design document, like with the default
 javascript view server, CouchDB can track and deal with changes.
 
-There are a few main reasons:
+However, we have a couple of problems:
 
  - couch-named-python doesn't reload modules. The viewserver will have to die
    by SIGTERM or error in order to force it to reload code.
