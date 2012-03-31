@@ -366,12 +366,16 @@ class TestNamedPythonViewServer(object):
         self.mocker.UnsetStubs()
 
     def test_compile(self):
-        name = "couch_named_python.tests.example_mod"
+        self.mocker.ReplayAll()
+
+        name = "couch_named_python.tests.example_mod_a"
         assert name not in sys.modules
         f = self.vs.compile(name + ".func_a")
         assert name in sys.modules
 
         assert f() == "test function A"
+
+        self.mocker.VerifyAll()
 
     def compile_sysexit(self, what):
         try:
@@ -407,10 +411,48 @@ class TestNamedPythonViewServer(object):
                        "'other_function'")
         self.mocker.ReplayAll()
 
-        self.compile_sysexit("couch_named_python.tests.example_mod."
+        self.compile_sysexit("couch_named_python.tests.example_mod_b."
                              "other_function")
         self.mocker.VerifyAll()
         self.mocker.ResetAll()
+
+    def test_checks_version(self):
+        self.vs.output("error", "compile_load",
+                       "ValueError: Loaded version None did not match "
+                       "expected version 2")
+        self.mocker.ReplayAll()
+
+        self.compile_sysexit("couch_named_python.tests.example_mod_b.func_a|2")
+        self.mocker.VerifyAll()
+        self.mocker.ResetAll()
+
+        self.vs.output("error", "compile_load",
+                       "ValueError: Loaded version 556 did not match "
+                       "expected version None")
+        self.mocker.ReplayAll()
+
+        self.compile_sysexit("couch_named_python.tests.example_mod_b.func_c")
+        self.mocker.VerifyAll()
+        self.mocker.ResetAll()
+
+        self.vs.output("error", "compile_load",
+                       "ValueError: Loaded version 556 did not match "
+                       "expected version 2")
+        self.mocker.ReplayAll()
+
+        self.compile_sysexit("couch_named_python.tests.example_mod_b.func_c|2")
+        self.mocker.VerifyAll()
+        self.mocker.ResetAll()
+
+        self.mocker.ReplayAll()
+
+        # Should succeed without output
+        f = self.vs.compile("couch_named_python.tests.example_mod_b.func_b|2")
+        g = self.vs.compile("couch_named_python.tests.example_mod_b."
+                            "func_c|556")
+
+        self.mocker.VerifyAll()
+
 
 class TestMain:
     def setup(self):

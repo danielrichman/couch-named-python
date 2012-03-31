@@ -29,6 +29,27 @@ for funcname in ["emit", "log", "start", "send", "get_row"]:
     locals()[funcname] = VSFunc(funcname)
 del funcname
 
+def version(version):
+    """
+    A function decorator that tags a function with its 'version'
+
+    version should be an integer. It will be checked against the expected
+    version stored in the design document when the function is loaded.
+    """
+
+    version = int(version)
+
+    def decorate(func):
+        func._cnp_version = version
+        return func
+    return decorate
+
+def get_version(func):
+    try:
+        return func._cnp_version
+    except AttributeError:
+        return None
+
 class ForbiddenError(Exception):
     pass
 

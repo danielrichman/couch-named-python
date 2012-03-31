@@ -5,10 +5,9 @@ import os
 import inspect
 import base_io
 
-from . import _set_vs, ForbiddenError, UnauthorizedError, \
+from . import _set_vs, get_version, ForbiddenError, UnauthorizedError, \
         NotFoundError, Redirect
 
-# TODO: some method for tracking loaded code version, and reloading()
 # TODO: an easy method for building a design doc from a module
 # TODO: docstrings
 
@@ -240,6 +239,11 @@ class NamedPythonViewServer(BasePythonViewServer):
     def compile(self, function):
         """import a function by name"""
         try:
+            (function, sep, version) = function.partition("|")
+            if version == "":
+                version = None
+            else:
+                version = int(version)
             parts = function.split(".")
             if len(parts) < 2 or "" in parts:
                 raise ValueError("Invalid function path")
@@ -251,6 +255,10 @@ class NamedPythonViewServer(BasePythonViewServer):
         try:
             __import__(module)
             f = getattr(sys.modules[module], name)
+            f_ver = get_version(f)
+            if f_ver != version:
+                raise ValueError("Loaded version {0!r} did not match "
+                        "expected version {1!r}".format(f_ver, version))
         except:
             self.exception("compile_load")
 
