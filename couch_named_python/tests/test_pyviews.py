@@ -454,7 +454,7 @@ class TestNamedPythonViewServer(object):
         self.mocker.VerifyAll()
 
 
-class TestMain:
+class TestMain(object):
     def setup(self):
         self.mocker = mox.Mox()
         self.mocker.StubOutWithMock(os, "fdopen")

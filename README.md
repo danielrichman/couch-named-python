@@ -52,6 +52,38 @@ Then the design doc might be
 
 i.e., the format is ``module.module.function|version``.
 
+You may prefer to describe your design doc in a yaml file, like this:
+
+    location:
+        views:
+            towns:
+                map: myviews.townmap
+        validate_doc_update: myviews.validate
+
+Then running
+
+    cnp-upload http://admin:password@localhost:5984 mydatabase design.yml
+
+Will upload the same design doc as above. You may have multiple design docs
+in a yaml file, and if a view has no reduce function you may omit the
+``map:``, like so:
+
+    design_a:
+        views:
+            one: module.path
+            two: module.other
+    design_b:
+        views:
+            stats:
+                map: module.map
+                reduce: module.reduce
+
+Furthermore, ``cnp-upload`` imports, detects and appends the ``|version``
+suffixes for you (note how they are ommitted in the yaml above, yet it would
+produce exactly the same design doc as the example). Your module therefore
+needs to be on the path, so make sure you have your virtualenv where the
+view server is installed activated.
+
 Rational for @version decorator
 ===============================
 
