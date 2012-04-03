@@ -401,6 +401,9 @@ class TestBasePythonViewServer(object):
 
         self.mocker.VerifyAll()
 
+    # TODO test ddoc_lists, normal, generator, & cutting list short/stopping
+    # & no output.
+
 class TestNamedPythonViewServer(object):
     def setup(self):
         self.mocker = mox.Mox()

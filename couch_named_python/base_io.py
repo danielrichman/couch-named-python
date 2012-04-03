@@ -149,17 +149,22 @@ class BaseViewServer(object):
         """print an output array (args)"""
         self.single(args, **kwargs)
 
+    def read_line(self):
+        line = self.stdin.readline()
+        self._input_line_length = len(line)
+
+        if not line:
+            return None
+        else:
+            return json.loads(line)
+
     def run(self):
         """run until self.stdin is closed, reading and handling commands"""
         while True:
             try:
-                line = self.stdin.readline()
-
-                if not line:
+                obj = self.read_line()
+                if obj == None:
                     break
-
-                self._input_line_length = len(line)
-                obj = json.loads(line)
                 self.handle_input(*obj)
             except SystemExit:
                 raise

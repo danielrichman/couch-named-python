@@ -57,8 +57,7 @@ class BasePythonViewServer(base_io.BaseViewServer):
         (doc, req) = args
 
         _set_vs(self, ["start", "send", "log"])
-        self.response_start = None
-        self.chunks = []
+        self._clear_state()
 
         try:
             value = func(doc, req)
@@ -96,14 +95,31 @@ class BasePythonViewServer(base_io.BaseViewServer):
 
             self.output("resp", value)
 
-        self.response_start = None
-        self.chunks = []
-
         _set_vs(None)
+        self._clear_state()
 
     def ddoc_lists(self, func, args):
         """execute a list function"""
-        pass # TODO ddoc_lists
+        (head, req) = args
+
+        _set_vs(self, ["start", "send", "get_row", "log"])
+        self._clear_state()
+
+        if inspect.isgeneratorfunction(func):
+            func(head, req, self._get_row_generator())
+        else:
+            tail = func(head, req)
+
+        if tail != None:
+            self.send(tail)
+
+        if not self.have_sent_start:
+            self.get_row() # And discard
+
+        self._send_list_chunks("end")
+
+        self._clear_state()
+        _set_vs(None)
 
     def ddoc_filters(self, func, args):
         """execute a filter function"""
@@ -155,15 +171,53 @@ class BasePythonViewServer(base_io.BaseViewServer):
 
     def get_row(self):
         """the get_row() callback from list functions"""
-        pass # TODO get_row
+        if self.list_ended:
+            return None
+
+        if not self.have_sent_start:
+            self._send_list_start()
+        else:
+            self._send_list_chunks()
+
+        obj = self.read_line()
+        assert obj and obj[0] in ["list_row", "list_end"]
+
+        if obj[0] == "list_end":
+            self.list_ended = True
+            return None
+        else:
+            return obj[1]
+
+    def _get_row_generator(self):
+        while True:
+            row = self.get_row()
+            if row == None:
+                break
+            yield row
+
+    def _send_list_start(self):
+        if self.response_start == None:
+            self.response_start = {}
+        self.output("start", chunks, self.response_start)
+        self.have_sent_start = True
+
+    def _send_list_chunks(self, label="chunks"):
+        """empty self.chunks by sending them to couch"""
+        self.output(label, self.chunks)
+        self.chunks = []
+
+    def _clear_state(self):
+        """clear request specific state (emit, send, etc)"""
+        self.emissions = []
+        self.response_start = None
+        self.chunks = []
+        self.have_sent_start = False
+        self.list_ended = False
 
     def reset(self, config=None, silent=False):
         """Reset state and garbage collect. Apply config, if present"""
 
         self.map_funcs = []
-        self.emissions = None
-        self.response_start = None
-        self.chunks = None
         self.view_ddoc = {}
         if config:
             self.query_config = config
@@ -191,7 +245,7 @@ class BasePythonViewServer(base_io.BaseViewServer):
         results = []
 
         for func in self.map_funcs:
-            self.emissions = []
+            self._clear_state()
 
             try:
                 if inspect.isgeneratorfunction(func):
@@ -207,7 +261,7 @@ class BasePythonViewServer(base_io.BaseViewServer):
                 results.append(self.emissions)
 
         _set_vs(None)
-        self.emissions = None
+        self._clear_state()
 
         self.output(*results)
 
