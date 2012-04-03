@@ -38,6 +38,12 @@ import couchdbkit
 from . import get_version
 
 def append_version(function):
+    """
+    appends |{version} to a module.module.function path
+
+    This will import the function using the same method as pyviews, get
+    the version and append the suffix.
+    """
     assert '|' not in function
 
     parts = function.split(".")
@@ -105,18 +111,25 @@ def generate_doc(name, doc, view_server="python"):
     doc["language"] = view_server
 
 def upload(server, db, docs):
+    """upload all docs to couch, overwriting existing"""
     server = couchdbkit.Server(server)
     db = server[db]
 
     for doc in docs:
         db.save_doc(doc, force_update=True)
 
-oparser = optparse.OptionParser(usage="%prog [options] design.yml")
+usage = "%prog [options] couch_uri couch_db file.yml [file2.yml ...]"
+oparser = optparse.OptionParser(usage=usage)
 oparser.add_option("--view-server", dest="view_server", default="python",
                    metavar="VS",
                    help="The name by which couch knows the view server")
 
 def main():
+    """
+    main method for cnp-uploader
+
+    Usage: cnp-uploader [options] couch_uri couch_db design.yml
+    """
     (options, args) = oparser.parse_args()
     if len(args) < 3:
         oparser.error("You must specify the server, database, and at least "

@@ -8,7 +8,6 @@ import base_io
 from . import _set_vs, get_version, ForbiddenError, UnauthorizedError, \
         NotFoundError, Redirect
 
-# TODO: an easy method for building a design doc from a module
 # TODO: docstrings
 
 class BasePythonViewServer(base_io.BaseViewServer):
