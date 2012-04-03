@@ -356,6 +356,35 @@ class TestBasePythonViewServer(object):
         self.vs.rereduce(["func1", "func2"], [-5, 10])
         self.mocker.VerifyAll()
 
+    def test_update(self):
+        def f(doc, req):
+            if req == {"blah": 2}:
+                assert doc == {"mydoc": True}
+                doc["moo"] = "milk"
+                return [doc, u"astring"]
+            elif req == {"boo": True}:
+                assert doc == None
+                return [{"newdoc": True}, {"body": "something",
+                        "headers": {"Content-Type": "garbage"}}]
+            else:
+                assert False
+
+        self.vs.okay()
+        self.vs.compile("func").AndReturn(f)
+        self.vs.output("up", {"mydoc": True, "moo": "milk"},
+                        {"body": "astring"})
+        self.vs.output("up", {"newdoc": True},
+            {"body": "something", "headers": {"Content-Type": "garbage"}})
+
+        self.mocker.ReplayAll()
+
+        self.vs.add_ddoc("desid", {"updates": {"f": "func"}})
+        self.vs.use_ddoc("desid", ["updates", "f"],
+                            [{"mydoc": True}, {"blah": 2}])
+        self.vs.use_ddoc("desid", ["updates", "f"], [None, {"boo": True}])
+
+        self.mocker.VerifyAll()
+
 class TestNamedPythonViewServer(object):
     def setup(self):
         self.mocker = mox.Mox()

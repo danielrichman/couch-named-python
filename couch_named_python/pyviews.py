@@ -8,8 +8,6 @@ import base_io
 from . import _set_vs, get_version, ForbiddenError, UnauthorizedError, \
         NotFoundError, Redirect
 
-# TODO: docstrings
-
 class BasePythonViewServer(base_io.BaseViewServer):
     """Python view server logic, with an overridable compile() method"""
 
@@ -117,7 +115,16 @@ class BasePythonViewServer(base_io.BaseViewServer):
 
     def ddoc_updates(self, func, args):
         """execute an update function"""
-        pass # TODO ddoc_updates
+
+        (doc, req) = args
+        _set_vs(self, ["log"])
+        (doc, response) = func(doc, req)
+        _set_vs(None)
+
+        if isinstance(response, basestring):
+            response = {"body": response}
+
+        self.output("up", doc, response);
 
     def ddoc_validate_doc_update(self, func, args):
         """execute a validate_doc_update function"""
