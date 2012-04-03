@@ -11,7 +11,15 @@ from . import _set_vs, get_version, ForbiddenError, UnauthorizedError, \
 # TODO: docstrings
 
 class BasePythonViewServer(base_io.BaseViewServer):
+    """Python view server logic, with an overridable compile() method"""
+
     def __init__(self, stdin, stdout):
+        """
+        stdin, stdout: where to read and write data
+
+        warning: they should be opened in 'line buffered' or 'unbuffered' mode
+        """
+
         super(BasePythonViewServer, self).__init__(stdin, stdout)
         self.ddocs = {}
         self.reset(silent=True)
@@ -23,6 +31,7 @@ class BasePythonViewServer(base_io.BaseViewServer):
 
     def use_ddoc(self, doc_id, func_path, func_args):
         """Call a function of a previously added ddoc"""
+
         assert doc_id in self.ddocs
         (doc, cache) = self.ddocs[doc_id]
 
@@ -45,6 +54,8 @@ class BasePythonViewServer(base_io.BaseViewServer):
         getattr(self, "ddoc_" + func_type)(func, func_args)
 
     def ddoc_shows(self, func, args):
+        """execute a show function"""
+
         (doc, req) = args
 
         _set_vs(self, ["start", "send", "log"])
@@ -93,18 +104,24 @@ class BasePythonViewServer(base_io.BaseViewServer):
         _set_vs(None)
 
     def ddoc_lists(self, func, args):
+        """execute a list function"""
         pass # TODO ddoc_lists
 
     def ddoc_filters(self, func, args):
+        """execute a filter function"""
+
         (docs, req) = args
         _set_vs(self, ["log"])
         self.output(True, [bool(func(doc, req)) for doc in docs])
         _set_vs(None)
 
     def ddoc_updates(self, func, args):
+        """execute an update function"""
         pass # TODO ddoc_updates
 
     def ddoc_validate_doc_update(self, func, args):
+        """execute a validate_doc_update function"""
+
         assert len(args) == 4 # newdoc, olddoc, userctx, secobj
 
         _set_vs(self, ["log"])
@@ -121,17 +138,21 @@ class BasePythonViewServer(base_io.BaseViewServer):
         _set_vs(None)
 
     def start(self, response_start):
+        """the start() callback from show functions"""
         assert self.response_start == None
         self.response_start = response_start
 
     def send(self, chunk):
+        """the send() callback from show functions"""
         self.chunks.append(chunk)
 
     def get_row(self):
+        """the get_row() callback from list functions"""
         pass # TODO get_row
 
     def reset(self, config=None, silent=False):
         """Reset state and garbage collect. Apply config, if present"""
+
         self.map_funcs = []
         self.emissions = None
         self.response_start = None
@@ -156,6 +177,7 @@ class BasePythonViewServer(base_io.BaseViewServer):
 
     def map_doc(self, doc):
         """run all map functions on a document"""
+
         assert self.map_funcs
 
         _set_vs(self, ["emit", "log"])
@@ -183,11 +205,12 @@ class BasePythonViewServer(base_io.BaseViewServer):
         self.output(*results)
 
     def emit(self, key, value):
-        """callback from map functions"""
+        """the emit() callback from map functions"""
         self.emissions.append([key, value])
 
     def reduce(self, funcs, data):
         """run reduce functions on some data"""
+
         # data is [[key, id], value].
         keys = [i[0] for i in data]
         values = [i[1] for i in data]
@@ -211,6 +234,7 @@ class BasePythonViewServer(base_io.BaseViewServer):
 
     def rereduce(self, funcs, values):
         """run reduce functions on some reduce function outputs"""
+
         results = []
 
         _set_vs(self, ["log"])
@@ -235,6 +259,8 @@ class BasePythonViewServer(base_io.BaseViewServer):
         raise NotImplementedError
 
 class NamedPythonViewServer(BasePythonViewServer):
+    """python server that 'compiles' functions by importing the given path"""
+
     def compile(self, function):
         """import a function by name"""
         try:
@@ -264,6 +290,7 @@ class NamedPythonViewServer(BasePythonViewServer):
         return f
 
 def main():
+    """main function for couch-named-python"""
     linebuf_in = os.fdopen(sys.stdin.fileno(), 'r', 1)
     linebuf_out = os.fdopen(sys.stdout.fileno(), 'w', 1)
 
