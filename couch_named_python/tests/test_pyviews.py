@@ -451,6 +451,11 @@ class TestNamedPythonViewServer(object):
         g = self.vs.compile("couch_named_python.tests.example_mod_b."
                             "func_c|556")
 
+        # Check that the @version decorator works, and preserves docstrings
+        assert f() == 50
+        assert f.__doc__ == "the second function"
+        assert g("blah", aword=4) == "moo ['blah', 4]"
+
         self.mocker.VerifyAll()
 
 

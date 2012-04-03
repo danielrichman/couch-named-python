@@ -7,8 +7,9 @@ def func_a():
 
 @version(2)
 def func_b():
-    pass
+    """the second function"""
+    return 50
 
 @version(556)
-def func_c():
-    pass
+def func_c(arg, aword=True):
+    return "moo " + str([arg, aword])
