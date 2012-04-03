@@ -316,13 +316,13 @@ class TestBasePythonViewServer(object):
 
         self.vs.compile("func1").AndReturn(f)
         self.vs.compile("func2").AndReturn(g)
-        self.vs.output(True, [41 + 102 + 251, {"meh": True}])
+        self.vs.output(True, [41 + 102 + 251, {"meh": True}], limit=None)
         self.vs.compile("func1").AndReturn(f)
         self.vs.compile("func2").AndReturn(g)
         self.vs.log("Ignored exception (reduce_runtime_error): "
                 "ValueError: Yeah whatever, func_name=g, "
                 "func_mod=couch_named_python.tests.test_pyviews")
-        self.vs.output(True, [41 + 3 + 2, None])
+        self.vs.output(True, [41 + 3 + 2, None], limit=None)
         self.mocker.ReplayAll()
 
         self.vs.reduce(["func1", "func2"],
@@ -343,17 +343,33 @@ class TestBasePythonViewServer(object):
 
         self.vs.compile("func1").AndReturn(f)
         self.vs.compile("func2").AndReturn(g)
-        self.vs.output(True, [11, 12])
+        self.vs.output(True, [11, 12], limit=None)
         self.vs.compile("func1").AndReturn(f)
         self.vs.compile("func2").AndReturn(g)
         self.vs.log("Ignored exception (rereduce_runtime_error): "
                 "AssertionError, func_name=g, "
                 "func_mod=couch_named_python.tests.test_pyviews")
-        self.vs.output(True, [4, None])
+        self.vs.output(True, [4, None], limit=None)
         self.mocker.ReplayAll()
 
         self.vs.rereduce(["func1", "func2"], [7, 5])
         self.vs.rereduce(["func1", "func2"], [-5, 10])
+        self.mocker.VerifyAll()
+
+    def test_reduce_limit(self):
+        self.vs.okay()
+        self.vs.compile("func").AndReturn(lambda k, v, r: sum(v))
+        self.vs.output(True, [579], limit=200)
+        self.vs.compile("func").AndReturn(lambda k, v, r: sum(v))
+        self.vs.output(True, [1134], limit=500)
+        self.mocker.ReplayAll()
+
+        self.vs._input_line_length = 10
+        self.vs.reset({"reduce_limit": True})
+        self.vs.reduce(["func"], [[["k", "i"], 123], [["k2", "i2"], 456]])
+        self.vs._input_line_length = 1000
+        self.vs.rereduce(["func"], [456, 678])
+
         self.mocker.VerifyAll()
 
     def test_update(self):

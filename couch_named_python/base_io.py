@@ -132,17 +132,22 @@ class BaseViewServer(object):
         """send a log message to couchdb"""
         self.output("log", string)
 
-    def single(self, obj):
+    def single(self, obj, limit=None):
         """print out a single json object"""
-        self.stdout.write(json.dumps(obj) + "\n")
+        line = json.dumps(obj) + "\n"
 
-    def okay(self):
+        if limit != None and len(line) > limit:
+            raise ValueError("Output line length is above the limit")
+
+        self.stdout.write(line)
+
+    def okay(self, **kwargs):
         """report success with no output"""
-        self.single(True)
+        self.single(True, **kwargs)
 
-    def output(self, *args):
+    def output(self, *args, **kwargs):
         """print an output array (args)"""
-        self.single(args)
+        self.single(args, **kwargs)
 
     def run(self):
         """run until self.stdin is closed, reading and handling commands"""
@@ -153,6 +158,7 @@ class BaseViewServer(object):
                 if not line:
                     break
 
+                self._input_line_length = len(line)
                 obj = json.loads(line)
                 self.handle_input(*obj)
             except SystemExit:

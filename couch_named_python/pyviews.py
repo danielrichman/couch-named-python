@@ -215,6 +215,16 @@ class BasePythonViewServer(base_io.BaseViewServer):
         """the emit() callback from map functions"""
         self.emissions.append([key, value])
 
+    def _reduce_limit(self):
+        """calculate the reduce limit size"""
+        if "reduce_limit" not in self.query_config:
+            return None
+        if not self.query_config["reduce_limit"]:
+            return None
+
+        i = self._input_line_length
+        return max(200, i / 2)
+
     def reduce(self, funcs, data):
         """run reduce functions on some data"""
 
@@ -236,8 +246,7 @@ class BasePythonViewServer(base_io.BaseViewServer):
 
         _set_vs(None)
 
-        # TODO: self.query_config["reduce_limit"]
-        self.output(True, results)
+        self.output(True, results, limit=self._reduce_limit())
 
     def rereduce(self, funcs, values):
         """run reduce functions on some reduce function outputs"""
@@ -258,8 +267,7 @@ class BasePythonViewServer(base_io.BaseViewServer):
 
         _set_vs(None)
 
-        # TODO: self.query_config["reduce_limit"]
-        self.output(True, results)
+        self.output(True, results, limit=self._reduce_limit())
 
     def compile(self, function):
         """produce something that can be executed, from a string"""

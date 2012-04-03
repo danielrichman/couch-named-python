@@ -2,7 +2,7 @@
 
 class TestIntegration(object):
     def test_view_mapreduce(self):
-        pass # TODO test_view_mapreduce
+        pass # TODO test_view_mapreduce (& don't forget reduce limit)
 
     def test_validation(self):
         pass # TODO test_validation

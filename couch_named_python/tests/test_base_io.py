@@ -53,6 +53,46 @@ class TestBaseViewServer(object):
         self.vs.output(True, 1, 2, "blah", 4)
         self.mocker.VerifyAll()
 
+    def test_sets_line_length(self):
+        def f(x):
+            assert self.vs._input_line_length == 10
+        def g(x, y):
+            assert self.vs._input_line_length == 31
+
+        self.mocker.StubOutWithMock(self.vs, "handle_input")
+        self.stdin.readline().AndReturn("""["reset"]\n""")
+        self.vs.handle_input("reset").WithSideEffects(f)
+        self.stdin.readline().AndReturn("""["map_doc", {"testing": true}]\n""")
+        self.vs.handle_input("map_doc", {"testing": True}).WithSideEffects(g)
+        self.stdin.readline().AndReturn("")
+        self.mocker.ReplayAll()
+        self.vs.run()
+        self.mocker.VerifyAll()
+
+    def test_output_limit(self):
+        self.stdout.write(JSON_NL(["blah"]))
+        self.stdout.write(JSON_NL("some text and some other stuff"))
+        self.stdout.write(JSON_NL(["a" * 80]))
+        self.mocker.ReplayAll()
+
+        self.vs.output("blah", limit=10) # No error
+        self.vs.single("some text and some other stuff", limit=200)
+        self.vs.output("a" * 80, limit=100) # No error
+
+        def t(func, limit, *what):
+            try:
+                func(*what, limit=limit)
+            except ValueError:
+                pass
+            else:
+                raise AssertionError("Expected ValueError from vs.output")
+
+        t(self.vs.output, 10, "blahblah")
+        t(self.vs.single, 5, ["asdf"])
+        t(self.vs.output, 100, {"whatever": "a" * 100})
+
+        self.mocker.VerifyAll()
+
     def test_log(self):
         self.stdout.write(JSON_NL(["log", "A kuku!"]))
         self.stdout.write(JSON_NL(["log", "Meh"]))
