@@ -16,6 +16,7 @@ class TestBasePythonViewServer(object):
         self.mocker.StubOutWithMock(self.vs, "okay")
         self.mocker.StubOutWithMock(self.vs, "output")
         self.mocker.StubOutWithMock(self.vs, "log")
+        self.mocker.StubOutWithMock(self.vs, "read_line")
 
     def teardown(self):
         self.mocker.UnsetStubs()
@@ -401,8 +402,184 @@ class TestBasePythonViewServer(object):
 
         self.mocker.VerifyAll()
 
-    # TODO test ddoc_lists, normal, generator, & cutting list short/stopping
-    # & no output.
+    def test_ddoc_lists(self):
+        def n1(head, req):
+            from couch_named_python import start, send, get_row
+            assert head == {"some header": True}
+            assert req == {"test_req": True}
+            start({"code": 100})
+            send("hello world")
+            assert get_row() == {"row": "one"}
+            assert get_row() == {"row": "two"}
+            send("moo")
+            send("baa")
+            assert get_row() == None
+            send("whatever")
+            assert get_row() == None
+
+        def n2(head, req):
+            from couch_named_python import send, get_row
+            send("test two")
+            assert get_row() == None
+            send("suffix")
+
+        def n3(head, req):
+            from couch_named_python import send, get_row, log
+            assert get_row() == {"row": "one"}
+            log("blah")
+            assert get_row() == {"row": "two"}
+
+        def n4(head, req):
+            from couch_named_python import NotFoundError
+            raise NotFoundError("meh")
+
+        def n5(head, req):
+            from couch_named_python import NotFoundError
+            raise NotFoundError()
+
+        def n6(head, req):
+            from couch_named_python import Redirect, log
+            log("bloop")
+            raise Redirect("http://somewhere_else/")
+
+        def n7(head, req):
+            from couch_named_python import Redirect
+            raise Redirect("http://somewhere_permanent/", True)
+
+        def g1(head, req, rows):
+            assert head == {"generator head": True}
+            assert req == {"generator req": True}
+            yield {"code": 101}
+            for row in rows:
+                yield "row " + row["row"]
+                yield "blah"
+            yield "suffix"
+
+        def g2(head, req, rows):
+            yield "test two"
+            yield "some data"
+
+        def g3(head, req, rows):
+            for row in rows:
+                pass
+
+            if False:
+                yield "I am a generator"
+
+        def g4(head, req, rows):
+            from couch_named_python import NotFoundError
+            raise NotFoundError()
+
+            if False:
+                yield "I am a generator"
+
+        self.vs.okay()
+
+        self.vs.compile("n1").AndReturn(n1)
+        self.vs.output("start", ["hello world"], {"code": 100})
+        self.vs.read_line().AndReturn(["list_row", {"row": "one"}])
+        self.vs.output("chunks", [])
+        self.vs.read_line().AndReturn(["list_row", {"row": "two"}])
+        self.vs.output("chunks", ["moo", "baa"])
+        self.vs.read_line().AndReturn(["list_end"])
+        self.vs.output("end", ["whatever"])
+
+        self.vs.compile("n2").AndReturn(n2)
+        self.vs.output("start", ["test two"], {})
+        self.vs.read_line().AndReturn(["list_end"])
+        self.vs.output("end", ["suffix"])
+
+        self.vs.compile("n3").AndReturn(n3)
+        self.vs.output("start", [], {})
+        self.vs.read_line().AndReturn(["list_row", {"row": "one"}])
+        self.vs.log("blah")
+        self.vs.output("chunks", [])
+        self.vs.read_line().AndReturn(["list_row", {"row": "two"}])
+        self.vs.output("end", [])
+
+        self.vs.compile("n4").AndReturn(n4)
+        self.vs.output("error", "not_found", "meh")
+
+        self.vs.compile("n5").AndReturn(n5)
+        self.vs.output("error", "not_found", "document not found")
+
+        self.vs.compile("n6").AndReturn(n6)
+        self.vs.log("bloop")
+        self.vs.output("start", [], {"code": 302, "headers":
+                            {"Location": "http://somewhere_else/"}})
+        self.vs.read_line().AndReturn(["list_row", {"row": "one"}])
+        self.vs.output("end", [])
+
+        self.vs.compile("n7").AndReturn(n7)
+        self.vs.output("start", [], {"code": 301, "headers":
+                            {"Location": "http://somewhere_permanent/"}})
+        self.vs.read_line().AndReturn(["list_row", {"row": "two"}])
+        self.vs.output("end", [])
+
+        self.vs.compile("g1").AndReturn(g1)
+        self.vs.output("start", [], {"code": 101})
+        self.vs.read_line().AndReturn(["list_row", {"row": "one"}])
+        self.vs.output("chunks", ["row one", "blah"])
+        self.vs.read_line().AndReturn(["list_row", {"row": "two"}])
+        self.vs.output("chunks", ["row two", "blah"])
+        self.vs.read_line().AndReturn(["list_end"])
+        self.vs.output("end", ["suffix"])
+
+        self.vs.compile("g2").AndReturn(g2)
+        self.vs.output("start", ["test two", "some data"], {})
+        self.vs.read_line().AndReturn(["list_row", {"irrelevant": True}])
+        self.vs.output("end", [])
+
+        self.vs.compile("g3").AndReturn(g3)
+        self.vs.output("start", [], {})
+        self.vs.read_line().AndReturn(["list_row", {"row": "one"}])
+        self.vs.output("chunks", [])
+        self.vs.read_line().AndReturn(["list_row", {"row": "two"}])
+        self.vs.output("chunks", [])
+        self.vs.read_line().AndReturn(["list_end"])
+        self.vs.output("end", [])
+
+        self.vs.compile("g4").AndReturn(g4)
+        self.vs.output("error", "not_found", "document not found")
+
+        self.mocker.ReplayAll()
+
+        self.vs.add_ddoc("dd", {"lists": {"n1": "n1", "n2": "n2", "n3": "n3",
+                  "n4": "n4", "n5": "n5", "n6": "n6", "n7": "n7", "g1": "g1",
+                  "g2": "g2", "g3": "g3", "g4": "g4"}})
+
+        # Most test functions ignore head and req
+        self.vs.use_ddoc("dd", ["lists", "n1"],
+                [{"some header": True}, {"test_req": True}])
+        self.vs.use_ddoc("dd", ["lists", "n2"], [None, None])
+        self.vs.use_ddoc("dd", ["lists", "n3"], [None, None])
+        self.vs.use_ddoc("dd", ["lists", "n4"], [None, None])
+        self.vs.use_ddoc("dd", ["lists", "n5"], [None, None])
+        self.vs.use_ddoc("dd", ["lists", "n6"], [None, None])
+        self.vs.use_ddoc("dd", ["lists", "n7"], [None, None])
+        self.vs.use_ddoc("dd", ["lists", "g1"],
+                [{"generator head": True}, {"generator req": True}])
+        self.vs.use_ddoc("dd", ["lists", "g2"], [None, None])
+        self.vs.use_ddoc("dd", ["lists", "g3"], [None, None])
+        self.vs.use_ddoc("dd", ["lists", "g4"], [None, None])
+
+        self.mocker.VerifyAll()
+
+
+    # TODO test ddoc_lists
+    # normal
+    #  - list
+    #  - empty list
+    #  - list but no output
+    #  - notfound
+    #  - redirect
+    # generator
+    #  - list
+    #  - empty list
+    #  - list but no output
+    #  - notfound
+    #  - redirect
+    # TODO: is sending {"error", "not_found", msg} for ddoc lists correct?
 
 class TestNamedPythonViewServer(object):
     def setup(self):

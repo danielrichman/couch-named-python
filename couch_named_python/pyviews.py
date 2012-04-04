@@ -105,10 +105,34 @@ class BasePythonViewServer(base_io.BaseViewServer):
         _set_vs(self, ["start", "send", "get_row", "log"])
         self._clear_state()
 
-        if inspect.isgeneratorfunction(func):
-            func(head, req, self._get_row_generator())
-        else:
-            tail = func(head, req)
+        tail = None
+
+        try:
+            if inspect.isgeneratorfunction(func):
+                g = func(head, req, self._get_row_generator())
+                for y in g:
+                    if isinstance(y, dict):
+                        self.start(y)
+                    else:
+                        assert isinstance(y, basestring)
+                        self.send(y)
+            else:
+                tail = func(head, req)
+
+        except NotFoundError as e:
+            msg = str(e)
+            if not msg:
+                msg = "document not found"
+            self.output("error", "not_found", msg)
+            return
+
+        except Redirect as e:
+            if e.permanent:
+                c = 301
+            else:
+                c = 302
+            # self.start will assert that start hasn't already been sent
+            self.start({"code": c, "headers": {"Location": e.url}})
 
         if tail != None:
             self.send(tail)
@@ -163,6 +187,7 @@ class BasePythonViewServer(base_io.BaseViewServer):
     def start(self, response_start):
         """the start() callback from show functions"""
         assert self.response_start == None
+        assert not self.have_sent_start
         self.response_start = response_start
 
     def send(self, chunk):
@@ -198,8 +223,10 @@ class BasePythonViewServer(base_io.BaseViewServer):
     def _send_list_start(self):
         if self.response_start == None:
             self.response_start = {}
-        self.output("start", chunks, self.response_start)
+        self.output("start", self.chunks, self.response_start)
+        self.chunks = []
         self.have_sent_start = True
+        self.response_start = None
 
     def _send_list_chunks(self, label="chunks"):
         """empty self.chunks by sending them to couch"""

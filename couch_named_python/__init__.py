@@ -23,7 +23,7 @@ class VSFunc(object):
         return getattr(_current_vs, self.name)
 
     def __call__(self, *args, **kwargs):
-        self.vs()(*args, **kwargs)
+        return self.vs()(*args, **kwargs)
 
 for funcname in ["emit", "log", "start", "send", "get_row"]:
     locals()[funcname] = VSFunc(funcname)
