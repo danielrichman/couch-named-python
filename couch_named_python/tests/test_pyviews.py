@@ -565,21 +565,7 @@ class TestBasePythonViewServer(object):
 
         self.mocker.VerifyAll()
 
-
-    # TODO test ddoc_lists
-    # normal
-    #  - list
-    #  - empty list
-    #  - list but no output
-    #  - notfound
-    #  - redirect
-    # generator
-    #  - list
-    #  - empty list
-    #  - list but no output
-    #  - notfound
-    #  - redirect
-    # TODO: is sending {"error", "not_found", msg} for ddoc lists correct?
+        # TODO: is sending {"error", "not_found", msg} for ddoc lists correct?
 
 class TestNamedPythonViewServer(object):
     def setup(self):
