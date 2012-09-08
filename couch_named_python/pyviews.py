@@ -266,8 +266,6 @@ class BasePythonViewServer(base_io.BaseViewServer):
     def map_doc(self, doc):
         """run all map functions on a document"""
 
-        assert self.map_funcs
-
         _set_vs(self, ["emit", "log"])
         results = []
 
@@ -371,7 +369,7 @@ class NamedPythonViewServer(BasePythonViewServer):
             module = '.'.join(parts[:-1])
             name = parts[-1]
         except:
-            self.exception("compile_func_name", log_traceback=False)
+            self.exception("compile_func_name")
 
         try:
             __import__(module)
@@ -381,7 +379,7 @@ class NamedPythonViewServer(BasePythonViewServer):
                 raise ValueError("Loaded version {0!r} did not match "
                         "expected version {1!r}".format(f_ver, version))
         except:
-            self.exception("compile_load", log_traceback=False)
+            self.exception("compile_load")
 
         return f
 
