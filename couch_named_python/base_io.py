@@ -109,11 +109,10 @@ class BaseViewServer(object):
         raise NotImplementedError
 
     def exception(self, where="unhandled exception", fatal=True,
-                  doc_id=None, func=None):
+                  doc_id=None, func=None, log_traceback=None):
         """report the current exception to couchdb, and exit if it's fatal"""
-        (exc_type, exc_value, discard_tb) = sys.exc_info()
-        exc_tb = traceback.format_exception_only(exc_type, exc_value)
-        info = exc_tb[-1].strip()
+        exc_tb = traceback.format_exc()
+        info = exc_tb.splitlines()[-1].strip()
 
         if doc_id:
             info += ", doc_id=" + doc_id
@@ -121,6 +120,12 @@ class BaseViewServer(object):
             info += ", func_name=" + func.__name__
         if func and hasattr(func, "__module__"):
             info += ", func_mod=" + func.__module__
+
+        if log_traceback is None:
+            log_traceback = fatal
+
+        if log_traceback:
+            self.log(exc_tb)
 
         if fatal:
             self.output("error", where, info)
