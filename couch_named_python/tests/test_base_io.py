@@ -2,6 +2,8 @@
 
 import mox
 import json
+import traceback
+from . import EqIfIn
 from ..base_io import BaseViewServer
 
 class JSON_NL(mox.Comparator):
@@ -111,6 +113,7 @@ class TestBaseViewServer(object):
 
     def test_misc_exception(self):
         self.stdin.readline().AndReturn("invalid json, woo!")
+        self.stdout.write(JSON_NL(["log", EqIfIn("Traceback")]))
         self.stdout.write(JSON_NL(["error", "unhandled exception",
                 "ValueError: No JSON object could be decoded"]))
         self.mocker.ReplayAll()
@@ -122,7 +125,9 @@ class TestBaseViewServer(object):
         self.mocker.StubOutWithMock(self.vs, "handle_input")
         self.stdin.readline().AndReturn("""["hello"]\n""")
         self.vs.handle_input("hello").AndRaise(ValueError("testing"))
-        self.vs.output("error", "unhandled exception", "ValueError: testing")
+        self.stdout.write(JSON_NL(["log", EqIfIn("Traceback")]))
+        self.stdout.write(JSON_NL(["error", "unhandled exception",
+                                   "ValueError: testing"]))
         self.mocker.ReplayAll()
 
         self.vs_run_sysexit()
@@ -138,8 +143,10 @@ class TestBaseViewServer(object):
         self.mocker.StubOutWithMock(self.vs, "handle_input")
         self.stdin.readline().AndReturn("""["hello"]\n""")
         self.vs.handle_input("hello").WithSideEffects(f)
-        self.vs.output("error", "while compiling, for example",
-                       "ValueError: test error")
+        # Traceback on by default for fatal
+        self.stdout.write(JSON_NL(["log", EqIfIn("Traceback")]))
+        self.stdout.write(JSON_NL(["error", "while compiling, for example",
+                                   "ValueError: test error"]))
         self.mocker.ReplayAll()
 
         self.vs_run_sysexit()
@@ -153,8 +160,10 @@ class TestBaseViewServer(object):
                 self.vs.exception(where="compilation", fatal=False)
 
         self.mocker.StubOutWithMock(self.vs, "handle_input")
+        self.mocker.StubOutWithMock(self.vs, "log")
         self.stdin.readline().AndReturn("""["hello"]\n""")
         self.vs.handle_input("hello").WithSideEffects(f)
+        # N.B. No traceback by default for non fatal
         self.vs.log("Ignored exception (compilation): ValueError: whatever")
         self.stdin.readline().AndReturn("")
         self.mocker.ReplayAll()
@@ -165,20 +174,48 @@ class TestBaseViewServer(object):
     def test_exception_info(self):
         def a_function_name():
             pass
-        def f():
-            try:
-                raise ValueError("whatever")
-            except ValueError:
-                self.vs.exception(where="compilation", fatal=False,
-                                  doc_id="123", func=a_function_name)
 
+        self.mocker.StubOutWithMock(self.vs, "output")
         self.vs.output("log", "Ignored exception (compilation): "
                        "ValueError: whatever, "
                        "doc_id=123, func_name=a_function_name, "
                        "func_mod=couch_named_python.tests.test_base_io")
         self.mocker.ReplayAll()
 
-        f()
+        try:
+            raise ValueError("whatever")
+        except ValueError:
+            self.vs.exception(where="compilation", fatal=False,
+                              doc_id="123", func=a_function_name)
+        self.mocker.VerifyAll()
+
+    def test_exception_traceback(self):
+        def check_tb(log, data):
+            assert data == traceback.format_exc()
+
+        self.mocker.StubOutWithMock(self.vs, "output")
+        self.vs.output("error", "where", "ValueError: J")
+        self.vs.output("log", "Ignored exception (where): ValueError: J")
+
+        self.vs.output("log", EqIfIn("Traceback")).WithSideEffects(check_tb)
+        self.vs.output("log", "Ignored exception (where): ValueError: J")
+        self.mocker.ReplayAll()
+
+        try:
+            raise ValueError("J")
+        except ValueError:
+            try:
+                self.vs.exception(where="where", log_traceback=False)
+            except SystemExit:
+                pass
+        try:
+            raise ValueError("J")
+        except ValueError:
+            self.vs.exception(where="where", fatal=False)
+        try:
+            raise ValueError("J")
+        except ValueError:
+            self.vs.exception(where="where", fatal=False, log_traceback=True)
         self.mocker.VerifyAll()
 
     def test_handle_dispatch(self):

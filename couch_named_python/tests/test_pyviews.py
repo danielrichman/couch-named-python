@@ -4,6 +4,7 @@ import mox
 import sys
 import gc
 import os
+from . import EqIfIn
 from ..pyviews import BasePythonViewServer, NamedPythonViewServer, main
 from .. import pyviews
 
@@ -599,6 +600,7 @@ class TestNamedPythonViewServer(object):
     def test_bad_name(self):
         for bad_string in ["asdf..fghj", "", ".", ".asdf.dfgh", "jkg.asdf.",
                            "only_one_part"]:
+            # No traceback
             self.vs.output("error", "compile_func_name",
                            "ValueError: Invalid function path")
             self.mocker.ReplayAll()
@@ -609,6 +611,7 @@ class TestNamedPythonViewServer(object):
             self.mocker.ResetAll()
 
     def test_nonexistant(self):
+        # No traceback
         self.vs.output("error", "compile_load",
                        "ImportError: No module named couch_named_python_other")
         self.mocker.ReplayAll()
@@ -617,6 +620,7 @@ class TestNamedPythonViewServer(object):
         self.mocker.VerifyAll()
         self.mocker.ResetAll()
 
+        # No traceback
         self.vs.output("error", "compile_load",
                        "AttributeError: 'module' object has no attribute "
                        "'other_function'")
@@ -628,6 +632,7 @@ class TestNamedPythonViewServer(object):
         self.mocker.ResetAll()
 
     def test_checks_version(self):
+        # No traceback
         self.vs.output("error", "compile_load",
                        "ValueError: Loaded version None did not match "
                        "expected version 2")
@@ -637,6 +642,7 @@ class TestNamedPythonViewServer(object):
         self.mocker.VerifyAll()
         self.mocker.ResetAll()
 
+        # No traceback
         self.vs.output("error", "compile_load",
                        "ValueError: Loaded version 556 did not match "
                        "expected version None")
@@ -646,6 +652,7 @@ class TestNamedPythonViewServer(object):
         self.mocker.VerifyAll()
         self.mocker.ResetAll()
 
+        # No traceback
         self.vs.output("error", "compile_load",
                        "ValueError: Loaded version 556 did not match "
                        "expected version 2")
