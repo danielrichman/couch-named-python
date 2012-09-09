@@ -94,7 +94,8 @@ def generate_doc(name, doc, view_server="python"):
             if "map" in view:
                 view["map"] = append_version(view["map"])
             if "reduce" in view:
-                view["reduce"] = append_version(view["reduce"])
+                if view["reduce"] not in ["_sum", "_count", "_stats"]:
+                    view["reduce"] = append_version(view["reduce"])
 
             u = set(view) - set(["map", "reduce"])
             if u:

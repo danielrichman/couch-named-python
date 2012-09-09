@@ -69,7 +69,10 @@ class TestUploader(object):
                "filters": {"filter1": m("f_one"), "filter2": m("f_two")},
                "updates": {"update1": m("u_one")},
                "views": {"simple_map": m("smap"),
-                   "properview": {"map": m("pmap"), "reduce": m("pred")}},
+                   "properview": {"map": m("pmap"), "reduce": m("pred")},
+                   "sumreduce": {"map": m("pmap"), "reduce": "_sum"},
+                   "countreduce": {"map": m("pmap"), "reduce": "_count"},
+                   "statsreduce": {"map": m("pmap"), "reduce": "_stats"}},
                "validate_doc_update": m("validate")}
         expect = {"_id": "_design/mydesign", "language": "python",
                "shows": {"show1": m("s_one"), "show2": m("s_two")},
@@ -77,7 +80,10 @@ class TestUploader(object):
                "filters": {"filter1": m("f_one|2"), "filter2": m("f_two|2")},
                "updates": {"update1": m("u_one|5")},
                "views": {"simple_map": {"map": m("smap|5")},
-                  "properview": {"map": m("pmap|5"), "reduce": m("pred|100")}},
+                  "properview": {"map": m("pmap|5"), "reduce": m("pred|100")},
+                   "sumreduce": {"map": m("pmap|5"), "reduce": "_sum"},
+                   "countreduce": {"map": m("pmap|5"), "reduce": "_count"},
+                   "statsreduce": {"map": m("pmap|5"), "reduce": "_stats"}},
                "validate_doc_update": m("validate|100")}
 
         # generate_doc modifies the dict in-place

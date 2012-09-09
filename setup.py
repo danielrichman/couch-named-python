@@ -3,7 +3,7 @@ from distutils.core import setup
 
 setup(
     name="couch-named-python",
-    version="0.2.1",
+    version="0.2.2",
     author="Daniel Richman",
     author_email="main@danielrichman.co.uk",
     url="https://github.com/danielrichman/couch-named-python",
